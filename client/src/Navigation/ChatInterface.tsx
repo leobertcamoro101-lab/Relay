@@ -37,31 +37,18 @@ function ChatInterface() {
     authError
   } = useWebSocket();
 
-  // const hasConnectedRef = useRef(false);
+  const isDM = currentRoom.startsWith("dm_");
+  const dmPartner = isDM ? users.find((u) => u.id !== currentUser?.id) : null;
+  const roomLabel = isDM ? (dmPartner?.username ?? "Direct Message") : `# ${currentRoom}`;
 
   // Auto-join using the logged-in user's name — no manual username entry
   useEffect(() => {
     if (status === "disconnected" && token) {
       connect(token, DEFAULT_ROOM);
     }
-  }, [status, token, connect]);
+  }, [status, token, connect, currentRoom, currentUser, users]);
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  // useEffect(() => {
-  //   if (status === "disconnected" && token && !hasConnectedRef.current) {
-  //     hasConnectedRef.current = true;
-  //     connect(token, DEFAULT_ROOM);
-  //   }
-  // }, [status, token, connect]);
 
-  // // Once we actually connect, clear the flag so a REAL future disconnect
-  // // (server restart, network drop) can still trigger an auto-reconnect.
-  // useEffect(() => {
-  //   if (status === "connected") {
-  //     hasConnectedRef.current = false;
-  //   }
-  // }, [status]);
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   useEffect(() => {
   if (authError) {
     logout();
@@ -93,7 +80,7 @@ function ChatInterface() {
         {/* Header */}
         <div className="bg-gray-900 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
           <div>
-            <h2 className="text-white font-bold"># {currentRoom}</h2>
+            <h2 className="text-white font-bold">{roomLabel}</h2>
             <p className="text-gray-500 text-xs">{onlineCount} online</p>
           </div>
           <div className="flex items-center gap-2">

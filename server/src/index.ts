@@ -26,6 +26,7 @@ import {
   getRoomMembers,
   getRoomUsers,
   getRoomOnlineCount,
+  canJoinRoom,   // NEW
 } from "./state.js";
 import { connectDB } from "./db.js";
 import app from "./app.js";
@@ -96,6 +97,11 @@ wss.on("connection", (ws: WebSocket) => {
         return;
       }
 
+      if (!canJoinRoom(room, decoded.userId)) {
+        ws.close(4003, "Not a participant in this conversation");
+        return;
+      }
+      
       const username = user.name.slice(0, 20);
       client = { ws, id: randomUUID(), userId: decoded.userId, username, room };
 
@@ -108,6 +114,7 @@ wss.on("connection", (ws: WebSocket) => {
       }
 
       joinRoom(room, client);
+      
 
       // const history = await getRecentMessages(room); // not wrapped in try/catch it will caused back button loading forever
 
@@ -182,6 +189,7 @@ wss.on("connection", (ws: WebSocket) => {
         if (!client) return;
         const newRoom = data.room?.trim();
         if (!newRoom || newRoom === client.room) return;
+        if (!canJoinRoom(newRoom, client.userId)) return; // NEW — silently ignore, don't leak that the room exists
 
         const oldRoom = client.room;
         leaveRoom(oldRoom, client.id);

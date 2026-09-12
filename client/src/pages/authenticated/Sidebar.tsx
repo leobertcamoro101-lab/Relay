@@ -1,5 +1,6 @@
 import type { User } from '../../types';
 import AccountMenu from '../../Navigation/AccountMenu';
+import UserSearch from './UserSearch';
 
 const ROOMS = ['general', 'tech', 'random'];
 
@@ -36,6 +37,9 @@ const Sidebar = ({ currentRoom, onlineCount, users, onSwitchRoom, currentUser }:
         </button>
       ))}
     </div>
+
+    {/* NEW — search to start a DM */}
+    <UserSearch onStartDM={onSwitchRoom} currentRoom={currentRoom} />
 
     {/* Online users */}
     <div className="p-3 flex-1">

@@ -31,6 +31,8 @@ router.post("/login", authLimiter, usersController.login);
 // Everything below this line requires a valid token
 router.use(checkAuth);
 
+router.get("/", usersController.searchUsers);
+
 router.patch(
   "/:uid",
   upload.single("image"),

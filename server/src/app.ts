@@ -5,6 +5,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import logger from "./util/logger";
 
 import usersRoutes from './routes/users-routes.js';
+import conversationsRoutes from './routes/conversations-routes.js';
 import HttpError from './models/http-error.js';
 
 const app = express();
@@ -40,6 +41,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use('/api/users', usersRoutes);
+app.use('/api/conversations', conversationsRoutes);   // NEW
 
 // unknown routes middleware
 app.use((req: Request, res: Response, next: NextFunction) => {

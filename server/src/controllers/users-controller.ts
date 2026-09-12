@@ -30,6 +30,31 @@ const getUserById = async (req: AuthRequest, res: Response, next: NextFunction) 
   res.json({ user: user.toObject({ getters: true }) });
 };
 
+const searchUsers = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  const query = ((req.query.q as string) || "").trim();
+  if (!query) {
+    return res.json({ users: [] });
+  }
+
+  let users;
+  try {
+    users = await User.find({
+      _id: { $ne: req.userData?.userId }, // don't return yourself
+      $or: [
+        { firstName: { $regex: query, $options: "i" } },
+        { lastName: { $regex: query, $options: "i" } },
+        { email: { $regex: query, $options: "i" } },
+      ],
+    })
+      .select("-password")
+      .limit(10);
+  } catch (err) {
+    return next(new HttpError("Something went wrong, could not search users.", 500));
+  }
+
+  res.json({ users: users.map((u) => u.toObject({ getters: true })) });
+};
+
 const signup = async (req: AuthRequest, res: Response, next: NextFunction) => {
 
   if (req.validationError) {
@@ -217,4 +242,4 @@ const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction
   res.json({ user: user.toObject({ getters: true }) });
 };
 
-export { signup, login, getUserById, updateProfile };
+export { signup, login, getUserById, updateProfile, searchUsers};

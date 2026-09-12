@@ -35,3 +35,9 @@ export function getRoomUsers(room: string): User[] {
 export function getRoomOnlineCount(room: string): number {
   return rooms.get(room)?.size ?? 0;
 }
+
+export function canJoinRoom(room: string, userId: string): boolean {
+  if (!room.startsWith("dm_")) return true; // public rooms — anyone can join
+  const ids = room.slice(3).split("_");
+  return ids.length === 2 && ids.includes(userId);
+}
