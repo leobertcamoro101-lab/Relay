@@ -1,6 +1,6 @@
 import { ZodType } from "zod";
 import { Response, NextFunction } from "express";
-import { AuthRequest } from "./check-auth";
+import { AuthRequest } from "./check-auth.js";
 
 // Runs a Zod schema against req.body and attaches a readable error message
 // to req.validationError on failure — it does NOT reject the request here.

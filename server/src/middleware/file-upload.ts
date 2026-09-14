@@ -1,8 +1,8 @@
 import multer, { FileFilterCallback } from "multer";
 import streamifier from "streamifier";
 import { Request, Response, NextFunction } from "express";
-import cloudinary from "../config/cloudinary";
-import HttpError from "../models/http-error";
+import cloudinary from "../config/cloudinary.js";
+import HttpError from "../models/http-error.js";
 
 declare global {
   namespace Express {

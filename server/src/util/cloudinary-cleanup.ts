@@ -1,4 +1,4 @@
-import cloudinary from "../config/cloudinary";
+import cloudinary from "../config/cloudinary.js";
 
 const extractPublicId = (url: string): string | null => {
   const match = url.match(/relay\/([^/.]+)/);

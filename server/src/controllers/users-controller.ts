@@ -3,12 +3,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from 'crypto';
 
-import sendResetPasswordEmail from "../util/brevo-email";
-import { deleteCloudinaryImage, extractPublicId } from "../util/cloudinary-cleanup";
-import HttpError from "../models/http-error";
-import logger from "../util/logger";
-import User from "../models/user";
-import { AuthRequest } from "../middleware/check-auth";
+import sendResetPasswordEmail from "../util/brevo-email.js";
+import { deleteCloudinaryImage, extractPublicId } from "../util/cloudinary-cleanup.js";
+import HttpError from "../models/http-error.js";
+import logger from "../util/logger.js";
+import User from "../models/user.js";
+import { AuthRequest } from "../middleware/check-auth.js";
 
 const getUserById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const userId = req.params.uid;
@@ -56,7 +56,7 @@ const searchUsers = async (req: AuthRequest, res: Response, next: NextFunction) 
     return next(new HttpError("Something went wrong, could not search users.", 500));
   }
 
-  res.json({ users: users.map((u) => u.toObject({ getters: true })) });
+  res.json({ users: users.map((u: any) => u.toObject({ getters: true })) });
 };
 
 const signup = async (req: AuthRequest, res: Response, next: NextFunction) => {

@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import mongoSanitize from "express-mongo-sanitize";
 import logger from "./util/logger.js";
-import pinoHttp from "pino-http";   
+import { pinoHttp } from "pino-http";   
 
 import usersRoutes from './routes/users-routes.js';
 import conversationsRoutes from './routes/conversations-routes.js';

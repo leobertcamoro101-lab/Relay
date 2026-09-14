@@ -1,11 +1,11 @@
 import express from "express";
-import { validateBody } from "../middleware/validate-zod";
-import { signupSchema, updateProfileSchema } from "../schemas/user-schemas";
+import { validateBody } from "../middleware/validate-zod.js";
+import { signupSchema, updateProfileSchema } from "../schemas/user-schemas.js";
 import rateLimit from "express-rate-limit";
 
-import * as usersController from "../controllers/users-controller";
-import { upload, uploadToCloudinary } from "../middleware/file-upload";
-import checkAuth from "../middleware/check-auth";
+import * as usersController from "../controllers/users-controller.js";
+import { upload, uploadToCloudinary } from "../middleware/file-upload.js";
+import checkAuth from "../middleware/check-auth.js";
 
 const router = express.Router();
 

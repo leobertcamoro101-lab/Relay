@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken"
 import { Request, Response, NextFunction } from "express";
-import HttpError from "../models/http-error";
+import HttpError from "../models/http-error.js";
 
 export interface AuthRequest extends Request {
   userData?: {
