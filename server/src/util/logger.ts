@@ -8,6 +8,14 @@ const isProduction = process.env.NODE_ENV === "production";
 // resolution issues under ts-node-dev's transpile-only mode.
 const logger = pino({
   level: process.env.LOG_LEVEL || (isProduction ? "info" : "debug"),
+  redact: {                                              // ADD THIS BLOCK
+    paths: [
+      "req.headers.authorization",
+      "req.headers.cookie",
+      'res.headers["set-cookie"]',
+    ],
+    censor: "[Redacted]",
+  },
 });
 
 export default logger;

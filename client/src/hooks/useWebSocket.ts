@@ -15,7 +15,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ChatMessage, ConnectionStatus, TypingUser, User } from "../types";
 
-const WS_URL = "ws://localhost:8080";
+// const WS_URL = "ws://localhost:8080"; // commented because of deploy (change)
+const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080";
 
 interface ServerMessage {
   type:

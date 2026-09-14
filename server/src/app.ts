@@ -2,13 +2,16 @@ import express, { Request, Response, NextFunction } from 'express';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import mongoSanitize from "express-mongo-sanitize";
-import logger from "./util/logger";
+import logger from "./util/logger.js";
+import pinoHttp from "pino-http";   
 
 import usersRoutes from './routes/users-routes.js';
 import conversationsRoutes from './routes/conversations-routes.js';
 import HttpError from './models/http-error.js';
 
 const app = express();
+
+app.use(pinoHttp({ logger }));
 
 app.use(helmet());
 app.use(bodyParser.json());
@@ -25,6 +28,7 @@ app.use((req, res, next) => {
 // CORS Policy
 const allowedOrigins = [
   "http://localhost:5173",
+  process.env.FRONTEND_URL,
 ];
 
 app.use((req: Request, res: Response, next: NextFunction) => {

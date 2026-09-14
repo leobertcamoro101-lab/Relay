@@ -11,9 +11,9 @@ const sendResetPasswordEmail = async (toEmail: string, resetToken: string): Prom
   await apiInstance.sendTransacEmail({
     sender: { email: process.env.GMAIL_USER, name: "Relay" },
     to: [{ email: toEmail }],
-    subject: "Reset your PlacePulse password",
+    subject: "Reset your Relay password",
     htmlContent: `
-      <p>You requested a password reset for your PlacePulse account.</p>
+      <p>You requested a password reset for your Relay account.</p>
       <p><a href="${resetLink}">Click here to reset your password</a></p>
       <p>This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
     `,
