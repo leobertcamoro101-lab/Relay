@@ -27,11 +27,24 @@ export interface SwitchRoomMessageIn {
   room: string;
 }
 
+export interface EditMessageIn {
+  type: 'EDIT_MESSAGE';
+  id: string;
+  text: string;
+}
+
+export interface DeleteMessageIn {
+  type: 'DELETE_MESSAGE';
+  id: string;
+}
+
 export type ClientMessage =
   | JoinMessage
   | ChatMessageIn
   | TypingMessageIn
-  | SwitchRoomMessageIn;
+  | SwitchRoomMessageIn
+  | EditMessageIn      // NEW
+  | DeleteMessageIn;   // NEW
 
 // ---- Messages the server sends back to clients ----
 
@@ -52,6 +65,7 @@ export interface ChatMessageOut {
   username: string;
   text: string;
   timestamp: number;
+  edited?: boolean;   // NEW
 }
 
 export interface UserJoinedMessage {
@@ -86,10 +100,23 @@ export interface RoomSwitchedMessage {
   messages: ChatMessageOut[];   // NEW
 }
 
+export interface MessageEditedMessage {
+  type: 'MESSAGE_EDITED';
+  id: string;
+  text: string;
+}
+
+export interface MessageDeletedMessage {
+  type: 'MESSAGE_DELETED';
+  id: string;
+}
+
 export type ServerMessage =
   | WelcomeMessage
   | ChatMessageOut
   | UserJoinedMessage
   | UserLeftMessage
   | TypingMessageOut
-  | RoomSwitchedMessage;
+  | RoomSwitchedMessage
+  | MessageEditedMessage    // NEW
+  | MessageDeletedMessage;  // NEW;

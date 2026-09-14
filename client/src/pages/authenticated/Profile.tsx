@@ -82,6 +82,12 @@ const Profile = () => {
           >
             Edit Profile
           </Link>
+          <Link
+            to="/profile/change-password"
+            className="w-full text-center bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 rounded-xl transition-colors"
+          >
+            Change Password
+          </Link>
         </div>
       </Card>
       </div>

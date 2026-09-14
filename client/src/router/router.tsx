@@ -11,6 +11,9 @@ import ChatInterface from "../Navigation/ChatInterface";
 import RequireAuth from "../Navigation/RequireAuth";
 import Profile from "../pages/authenticated/Profile";
 import EditProfile from "../pages/authenticated/EditProfile";
+import ForgotPassword from "../pages/guest/ForgotPassword";
+import ResetPassword from "../pages/guest/ResetPassword";
+import ChangePassword from "../pages/authenticated/ChangePassword";
 
 
 const routes: RouteObject[] = [
@@ -36,6 +39,8 @@ const routes: RouteObject[] = [
       },
       { path: "*", element: <Navigate to="/" replace /> },
       { path: "signup", element: <Signup /> },
+      { path: "forgot-password", element: <ForgotPassword /> },   // NEW
+      { path: "reset-password/:token", element: <ResetPassword /> },   // NEW
       {
         path: "profile",
         element: (
@@ -52,6 +57,14 @@ const routes: RouteObject[] = [
           </RequireAuth>
         ),
       },
+      {
+        path: "profile/change-password",
+        element: (
+          <RequireAuth>
+            <ChangePassword />
+          </RequireAuth>
+        ),
+      }
     ],
   },
 ];

@@ -5,6 +5,7 @@ export interface IMessage extends Document {
   userId: string;
   username: string;
   text: string;
+  edited: boolean;
   createdAt: Date;
 }
 
@@ -14,6 +15,7 @@ const messageSchema = new Schema<IMessage>(
     userId: { type: String, required: true },
     username: { type: String, required: true },
     text: { type: String, required: true, maxlength: 500 },
+    edited: { type: Boolean, default: false },   // NEW
   },
   { timestamps: true }
 );
@@ -39,6 +41,7 @@ export async function getRecentMessages(room: string, limit = 50) {
     username: m.username,
     text: m.text,
     timestamp: m.createdAt.getTime(),
+    edited: m.edited,
   }));
 }
 

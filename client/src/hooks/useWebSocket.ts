@@ -24,7 +24,9 @@ interface ServerMessage {
     | "USER_JOINED"
     | "USER_LEFT"
     | "TYPING"
-    | "ROOM_SWITCHED";
+    | "ROOM_SWITCHED"
+    | "MESSAGE_EDITED"   // NEW
+    | "MESSAGE_DELETED"; // NEW;
   userId?: string;
   username?: string;
   room?: string;
@@ -128,6 +130,18 @@ export const useWebSocket = () => {
         setMessages(data.messages || []);
         setTypingUsers([]);
         break;
+
+      case "MESSAGE_EDITED":
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === data.id ? { ...m, text: data.text as string, edited: true } : m
+          )
+        );
+        break;
+
+      case "MESSAGE_DELETED":
+        setMessages((prev) => prev.filter((m) => m.id !== data.id));
+        break;
     }
   };
 
@@ -172,6 +186,21 @@ export const useWebSocket = () => {
       wsRef.current.send(JSON.stringify({ type: "SWITCH_ROOM", room }));
     }
   }, []);
+  
+  // ============================================
+  // EDIT / DELETE MESSAGE
+  // ============================================
+  const editMessage = useCallback((id: string, text: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "EDIT_MESSAGE", id, text }));
+    }
+  }, []);
+
+  const deleteMessage = useCallback((id: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "DELETE_MESSAGE", id }));
+    }
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -193,5 +222,7 @@ export const useWebSocket = () => {
     sendTyping,
     switchRoom,
     authError,
+    editMessage,     // NEW
+    deleteMessage,   // NEW
   };
 };

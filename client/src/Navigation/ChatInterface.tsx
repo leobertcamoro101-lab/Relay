@@ -1,7 +1,8 @@
 import { 
   useContext, 
-  useEffect
+  useEffect,
   // useRef
+  useState
  } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth-context";
@@ -16,6 +17,7 @@ const DEFAULT_ROOM = "general";
 function ChatInterface() {
   const navigate = useNavigate();
   const { logout, token } = useContext(AuthContext);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -34,7 +36,9 @@ function ChatInterface() {
     sendMessage,
     sendTyping,
     switchRoom,
-    authError
+    authError,
+    editMessage,     // NEW
+    deleteMessage,   // NEW
   } = useWebSocket();
 
   const isDM = currentRoom.startsWith("dm_");
@@ -73,15 +77,39 @@ function ChatInterface() {
         users={users}
         onSwitchRoom={switchRoom}
         currentUser={currentUser}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
       {/* Chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <div className="bg-gray-900 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="md:hidden text-gray-400 hover:text-white transition-colors"
+            aria-label="Open menu"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-6 h-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
           <div>
             <h2 className="text-white font-bold">{roomLabel}</h2>
             <p className="text-gray-500 text-xs">{onlineCount} online</p>
+          </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
@@ -116,6 +144,8 @@ function ChatInterface() {
           messages={messages}
           currentUser={currentUser}
           typingUsers={typingUsers}
+          onEditMessage={editMessage}     // NEW
+          onDeleteMessage={deleteMessage} // NEW
         />
 
         {/* Input */}

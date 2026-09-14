@@ -16,6 +16,13 @@ const authLimiter = rateLimit({
   message: { message: "Too many attempts, please try again later." },
 });
 
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  // max: 5,
+  max: process.env.NODE_ENV === "test" ? 1000 : 5,   // ← changed
+  message: { message: "Too many password reset requests, please try again later." },
+});
+
 router.get("/:uid", usersController.getUserById);
 
 router.post(
@@ -27,7 +34,8 @@ router.post(
   usersController.signup
 );
 router.post("/login", authLimiter, usersController.login);
-
+router.post("/forgot-password", forgotPasswordLimiter, usersController.forgotPassword);
+router.post("/reset-password", authLimiter, usersController.resetPassword);
 // Everything below this line requires a valid token
 router.use(checkAuth);
 
@@ -42,5 +50,6 @@ router.patch(
   ],
   usersController.updateProfile
 );
+router.patch("/:uid/password", usersController.changePassword);
 
 export default router;

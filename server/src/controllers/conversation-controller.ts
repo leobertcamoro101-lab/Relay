@@ -3,6 +3,7 @@ import Conversation from "../models/conversation";
 import HttpError from "../models/http-error";
 import { AuthRequest } from "../middleware/check-auth";
 import { getDMRoomId } from "../util/dmRoom";
+import logger from "../util/logger";
 
 const startConversation = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const myId = req.userData?.userId;
@@ -24,6 +25,7 @@ const startConversation = async (req: AuthRequest, res: Response, next: NextFunc
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
   } catch (err) {
+    logger.error({ err }, "Start conversation failed");
     return next(new HttpError("Could not start conversation.", 500));
   }
 
@@ -39,6 +41,7 @@ const getMyConversations = async (req: AuthRequest, res: Response, next: NextFun
       .populate("participants", "firstName lastName image")
       .sort({ updatedAt: -1 });
   } catch (err) {
+    logger.error({ err }, "Get my conversations failed");
     return next(new HttpError("Could not fetch conversations.", 500));
   }
 

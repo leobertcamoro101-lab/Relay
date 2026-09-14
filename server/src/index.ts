@@ -236,6 +236,52 @@ wss.on("connection", (ws: WebSocket) => {
         );
         break;
       }
+            case "EDIT_MESSAGE": {
+        if (!client) return;
+        const text = data.text?.trim().slice(0, 500);
+        if (!text || !data.id) return;
+
+        let updated;
+        try {
+          updated = await Message.findOneAndUpdate(
+            { _id: data.id, userId: client.userId }, // ownership check — only the sender can edit
+            { text, edited: true },
+            { returnDocument: "after" },
+          );
+        } catch {
+          return;
+        }
+        if (!updated) return; // not found, or not the owner — silently ignore
+
+        broadcast(client.room, {
+          type: "MESSAGE_EDITED",
+          id: String(updated._id),
+          text: updated.text,
+        });
+        break;
+      }
+
+      case "DELETE_MESSAGE": {
+        if (!client) return;
+        if (!data.id) return;
+
+        let deleted;
+        try {
+          deleted = await Message.findOneAndDelete({
+            _id: data.id,
+            userId: client.userId, // ownership check — only the sender can delete
+          });
+        } catch {
+          return;
+        }
+        if (!deleted) return;
+
+        broadcast(client.room, {
+          type: "MESSAGE_DELETED",
+          id: String(deleted._id),
+        });
+        break;
+      }
     }
   });
 
