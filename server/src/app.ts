@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import mongoSanitize from "express-mongo-sanitize";
 import logger from "./util/logger.js";
+import * as Sentry from "@sentry/node";
 import { pinoHttp } from "pino-http";   
 
 import usersRoutes from './routes/users-routes.js';
@@ -70,6 +71,7 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
       { err: error, method: req.method, path: req.path, status },
       "Request failed"
     );
+    Sentry.captureException(error);
   }
 
   res.status(status);

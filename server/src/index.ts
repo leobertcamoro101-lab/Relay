@@ -10,6 +10,7 @@
 //   server -> client: WELCOME, MESSAGE, USER_JOINED,
 //                      USER_LEFT, TYPING, ROOM_SWITCHED
 // ============================================
+import "./instrument.js";
 import jwt from "jsonwebtoken";
 import User from "./models/user.js";
 import "dotenv/config";
