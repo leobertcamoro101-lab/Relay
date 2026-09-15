@@ -26,7 +26,7 @@ const Login = () => {
     formState: { errors, isSubmitting },
   } = useForm<LoginInfo>({
     resolver: zodResolver(loginSchema),
-    mode: "onBlur",
+    mode: "onTouched",
   });
 
   const onSubmit = async (data: LoginInfo) => {

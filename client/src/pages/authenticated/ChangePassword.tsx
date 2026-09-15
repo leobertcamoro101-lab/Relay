@@ -24,7 +24,7 @@ const ChangePassword = () => {
     formState: { errors, isSubmitting },
   } = useForm<ChangePasswordInfo>({
     resolver: zodResolver(changePasswordSchema),
-    mode: "onBlur",
+    mode: "onTouched",
   });
 
   const onSubmit = async (data: ChangePasswordInfo) => {

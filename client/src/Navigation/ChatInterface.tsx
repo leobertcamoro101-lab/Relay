@@ -116,6 +116,15 @@ function ChatInterface() {
             <span className="text-green-400 text-xs font-mono">
               WebSocket connected
             </span>
+            {/* for sentry testing only */}
+            {/* <button
+              onClick={() => {
+                throw new Error("My first Sentry frontend error!");
+              }}
+              className="ml-2 text-red-400 hover:text-red-300 text-xs font-mono"
+            >
+              Test Sentry
+            </button> */}
             <button
               onClick={handleLogout}
               title="Log out"

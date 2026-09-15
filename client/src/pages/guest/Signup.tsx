@@ -28,7 +28,7 @@ const Signup = () => {
     formState: { errors },
   } = useForm<PersonalInfo>({
     resolver: zodResolver(personalInfoSchema),
-    mode: "onBlur",
+    mode: "onTouched",
   });
 
   const onSubmit = async (data: PersonalInfo) => {

@@ -19,7 +19,7 @@ const ForgotPassword = () => {
     formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordInfo>({
     resolver: zodResolver(forgotPasswordSchema),
-    mode: "onBlur",
+    mode: "onTouched",
   });
 
   const onSubmit = async (data: ForgotPasswordInfo) => {
