@@ -47,6 +47,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use('/api/users', usersRoutes);
 app.use('/api/conversations', conversationsRoutes);   // NEW
+app.get("/debug-sentry", () => {
+  throw new Error("My first Sentry error!");
+});
 
 // unknown routes middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
