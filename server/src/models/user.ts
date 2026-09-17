@@ -26,13 +26,11 @@ const userSchema = new Schema<IUser>(
   password: { type: String, required: true, minlength: 6 },
   image: { 
     type: String, 
-    required: true, 
-    default: "https://ui-avatars.com/api/?name=User&background=random"  // ← just adds a fallback
+    
+    default: "",
   },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
-
-  // places: [{ type: mongoose.Types.ObjectId, required: true, ref: "Place" }], // with relation to place
 }, 
 { 
   timestamps: true,

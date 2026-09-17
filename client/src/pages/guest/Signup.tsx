@@ -132,7 +132,7 @@ const Signup = () => {
           </FormField>
 
           {/* Zod lesson callout */}
-          <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3">
+          {/* <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3">
             <p className="font-mono text-violet-400 text-xs mb-1">
               // Zod concepts in this step:
             </p>
@@ -140,7 +140,7 @@ const Signup = () => {
               z.string().min().max().transform() • z.number().int().min().max()
               • .optional() • .email()
             </p>
-          </div>
+          </div> */}
 
           <button
             type="submit"

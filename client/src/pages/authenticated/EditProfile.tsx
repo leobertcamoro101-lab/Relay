@@ -104,13 +104,20 @@ const EditProfile = () => {
           )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="flex flex-col items-center gap-2">
-              <Avatar image={currentImage} alt="Current avatar" width="96px" />
+              <Avatar image={auth.image ?? undefined} alt="Profile" name={auth.name ?? undefined} width="96px" />
               <input
                 ref={fileInputRef}
+                id="profile-image-upload"
                 type="file"
                 accept="image/png, image/jpeg"
-                className="text-xs text-gray-400"
+                className="hidden"
               />
+              <label
+                htmlFor="profile-image-upload"
+                className="text-xs text-gray-400 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-1.5 cursor-pointer transition-colors"
+              >
+                Upload Photo
+              </label>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

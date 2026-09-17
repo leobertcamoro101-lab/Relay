@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useContext, useState, useRef, useEffect } from 'react';
-import { AuthContext } from '../context/auth-context';
-import Avatar from '../components/Avatar';
+import { AuthContext } from '../../context/auth-context';
+import Avatar from '../../components/Avatar';
 import { ChevronDown, User, LogOut } from 'lucide-react';
 
 function AccountMenu() {
@@ -31,7 +31,7 @@ function AccountMenu() {
         aria-label="Account menu"
       >
         <div className="w-8 h-8">
-          <Avatar image={auth.image ?? undefined} alt="Profile" width="32px" />
+          <Avatar image={auth.image ?? undefined} alt="Profile" name={auth.name ?? undefined} width="32px" />
         </div>
         <ChevronDown size={16} className="text-gray-500" />
       </button>

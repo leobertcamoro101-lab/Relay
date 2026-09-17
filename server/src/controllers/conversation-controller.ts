@@ -1,9 +1,9 @@
 import { Response, NextFunction } from "express";
-import Conversation from "../models/conversation.js";
-import HttpError from "../models/http-error.js";
-import { AuthRequest } from "../middleware/check-auth.js";
-import { getDMRoomId } from "../util/dmRoom.js";
-import logger from "../util/logger.js";
+import Conversation from "../models/conversation";
+import HttpError from "../models/http-error";
+import { AuthRequest } from "../middleware/check-auth";
+import { getDMRoomId } from "../util/dmRoom";
+import logger from "../util/logger";
 
 const startConversation = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const myId = req.userData?.userId;
@@ -45,7 +45,7 @@ const getMyConversations = async (req: AuthRequest, res: Response, next: NextFun
     return next(new HttpError("Could not fetch conversations.", 500));
   }
 
-  const result = conversations.map((c: any) => {
+  const result = conversations.map((c) => {
     const other = (c.participants as any[]).find((p) => p._id.toString() !== myId);
     return {
       roomId: c.roomId,
@@ -58,4 +58,36 @@ const getMyConversations = async (req: AuthRequest, res: Response, next: NextFun
   res.json({ conversations: result });
 };
 
-export { startConversation, getMyConversations };
+const deleteConversation = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  const myId = req.userData?.userId;
+  const { roomId } = req.params;
+
+  let conversation;
+  try {
+    conversation = await Conversation.findOne({ roomId });
+  } catch (err) {
+    logger.error({ err }, "Delete conversation failed");
+    return next(new HttpError("Could not delete conversation.", 500));
+  }
+
+  if (!conversation) {
+    return next(new HttpError("Conversation not found.", 404));
+  }
+
+  const isParticipant = (conversation.participants as any[]).some((p) => p.toString() === myId);
+  if (!isParticipant) {
+    return next(new HttpError("You are not allowed to delete this conversation.", 403));
+  }
+
+  try {
+    await Conversation.deleteOne({ _id: conversation._id });
+  } catch (err) {
+    logger.error({ err }, "Delete conversation failed");
+    return next(new HttpError("Could not delete conversation.", 500));
+  }
+
+  logger.info({ userId: myId, roomId }, "Conversation deleted");
+  res.json({ message: "Conversation deleted." });
+};
+
+export { startConversation, getMyConversations, deleteConversation };

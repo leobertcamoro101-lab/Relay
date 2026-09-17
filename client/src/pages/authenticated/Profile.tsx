@@ -60,7 +60,8 @@ const Profile = () => {
       </Link>
       <Card>
         <div className="flex flex-col items-center gap-4">
-          <Avatar image={profile.image} alt={profile.firstName} width="96px" />
+          {/* <Avatar image={profile.image} alt={profile.firstName} width="96px" /> */}
+          <Avatar image={profile.image} alt={profile.firstName} name={`${profile.firstName} ${profile.lastName}`} width="96px" />
           <h1 className="text-2xl font-bold text-white">
             {profile.firstName} {profile.lastName}
           </h1>

@@ -1,16 +1,19 @@
-import { 
-  useContext, 
+import {
+  useContext,
   useEffect,
+  useCallback,
   // useRef
   useState
  } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/auth-context";
-import { useWebSocket } from "../hooks/useWebSocket";
-import MessageInput from "../pages/authenticated/MessageInput";
-import MessageList from "../pages/authenticated/MessageList";
-import Sidebar from "../pages/authenticated/Sidebar";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { AuthContext } from "../../context/auth-context";
+import { useWebSocket } from "../../hooks/useWebSocket";
+import { useHttpClient } from "../../hooks/http-hook";
+import type { ConversationSummary } from "../../../types"; 
+import MessageInput from "../authenticated/MessageInput";
+import MessageList from "../authenticated/MessageList";
+import Sidebar from "../guest/Sidebar";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const DEFAULT_ROOM = "general";
 
@@ -18,6 +21,8 @@ function ChatInterface() {
   const navigate = useNavigate();
   const { logout, token } = useContext(AuthContext);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const { sendRequest: sendConversationRequest } = useHttpClient();
 
   const handleLogout = () => {
     logout();
@@ -44,6 +49,69 @@ function ChatInterface() {
   const isDM = currentRoom.startsWith("dm_");
   const dmPartner = isDM ? users.find((u) => u.id !== currentUser?.id) : null;
   const roomLabel = isDM ? (dmPartner?.username ?? "Direct Message") : `# ${currentRoom}`;
+
+  // Direct-message conversation list — fetched separately from the
+  // WebSocket's online-users list since it needs to include DMs with
+  // people who aren't currently online (or whose account was deleted).
+  const fetchConversations = useCallback(async () => {
+    if (!token) return;
+    try {
+      const responseData = await sendConversationRequest(
+        `${import.meta.env.VITE_BACKEND_URL}/conversations`,
+        "GET",
+        null,
+        { Authorization: `Bearer ${token}` }
+      );
+      setConversations(responseData.conversations ?? []);
+    } catch {
+      // error already captured by useHttpClient's error state
+    }
+  }, [token, sendConversationRequest]);
+
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  const handleStartConversation = useCallback(
+    async (otherUserId: string) => {
+      if (!token) return;
+      try {
+        const responseData = await sendConversationRequest(
+          `${import.meta.env.VITE_BACKEND_URL}/conversations`,
+          "POST",
+          JSON.stringify({ otherUserId }),
+          { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+        );
+        await fetchConversations();
+        switchRoom(responseData.roomId);
+      } catch {
+        // error already captured by useHttpClient's error state
+      }
+    },
+    [token, sendConversationRequest, fetchConversations, switchRoom]
+  );
+
+  const handleDeleteConversation = useCallback(
+    async (roomId: string) => {
+      if (!token) return;
+      if (!window.confirm("Delete this conversation? This can't be undone.")) return;
+      try {
+        await sendConversationRequest(
+          `${import.meta.env.VITE_BACKEND_URL}/conversations/${roomId}`,
+          "DELETE",
+          null,
+          { Authorization: `Bearer ${token}` }
+        );
+        setConversations((prev) => prev.filter((c) => c.roomId !== roomId));
+        if (roomId === currentRoom) {
+          switchRoom(DEFAULT_ROOM);
+        }
+      } catch {
+        // error already captured by useHttpClient's error state
+      }
+    },
+    [token, sendConversationRequest, currentRoom, switchRoom]
+  );
 
   // Auto-join using the logged-in user's name — no manual username entry
   useEffect(() => {
@@ -79,6 +147,9 @@ function ChatInterface() {
         currentUser={currentUser}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        conversations={conversations}
+        onStartConversation={handleStartConversation}
+        onDeleteConversation={handleDeleteConversation}
       />
 
       {/* Chat area */}
@@ -116,15 +187,6 @@ function ChatInterface() {
             <span className="text-green-400 text-xs font-mono">
               WebSocket connected
             </span>
-            {/* for sentry testing only */}
-            {/* <button
-              onClick={() => {
-                throw new Error("My first Sentry frontend error!");
-              }}
-              className="ml-2 text-red-400 hover:text-red-300 text-xs font-mono"
-            >
-              Test Sentry
-            </button> */}
             <button
               onClick={handleLogout}
               title="Log out"

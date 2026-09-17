@@ -29,3 +29,7 @@ src/server.ts
 
 # to check error in Typescript
 npx tsc --noEmit  
+
+
+# required: true, 
+# // default: "https://ui-avatars.com/api/?name=User&background=random"  // ← just adds a fallback

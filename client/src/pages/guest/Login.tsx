@@ -1,7 +1,7 @@
 // ============================================
 // React Hook Form + Zod — same pattern as Signup.tsx:
 // zodResolver connects the Zod schema to RHF, so every
-// field validates automatically on blur/submit.
+// field validates automatically on ontouched/submit.
 // ============================================
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -59,7 +59,7 @@ const Login = () => {
         <div className="text-center mb-8">
           <p className="text-5xl mb-3">💬</p>
           <h1 className="text-3xl font-bold text-white mb-2">Login</h1>
-          <p className="text-gray-400 text-sm">Welcome back to ChatFlow</p>
+          <p className="text-gray-400 text-sm">Welcome back to Relay</p>
         </div>
 
         <Card>

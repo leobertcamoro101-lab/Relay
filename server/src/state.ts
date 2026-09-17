@@ -1,5 +1,6 @@
 import type { WebSocket } from 'ws';
 import type { User } from './types.js';
+import { parseDMRoomId } from './util/dmRoom.js';
 
 export interface ClientState {
   ws: WebSocket;
@@ -36,8 +37,12 @@ export function getRoomOnlineCount(room: string): number {
   return rooms.get(room)?.size ?? 0;
 }
 
+// Public/group rooms (e.g. "general") are open to anyone. A DM room's id
+// itself encodes its two participants (see util/dmRoom.ts), so we can
+// authorize a JOIN/SWITCH_ROOM synchronously just by checking the
+// requesting user's id is one of the two — no DB lookup needed.
 export function canJoinRoom(room: string, userId: string): boolean {
-  if (!room.startsWith("dm_")) return true; // public rooms — anyone can join
-  const ids = room.slice(3).split("_");
-  return ids.length === 2 && ids.includes(userId);
+  const participants = parseDMRoomId(room);
+  if (!participants) return true;
+  return participants.includes(userId);
 }
