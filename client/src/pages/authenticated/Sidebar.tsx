@@ -1,6 +1,7 @@
 import { Trash2, X } from 'lucide-react';
-import type { User, ConversationSummary } from '../../../types';
-import AccountMenu from '../../pages/authenticated/AccountMenu';
+import type { User, ConversationSummary } from '../../types';
+import AccountMenu from './AccountMenu';
+import UserSearch from './UserSearch';
 
 const ROOMS = ['general', 'tech', 'random'];
 
@@ -87,9 +88,10 @@ const Sidebar = ({
           <p className="text-gray-500 text-xs uppercase tracking-widest mb-2 px-2">
             Direct Messages
           </p>
+          <UserSearch onSelectUser={onStartConversation} />
           {conversations.length === 0 && (
             <p className="text-gray-600 text-xs px-2">
-              Click an online user below to start a DM.
+              Search above, or click an online user below, to start a DM.
             </p>
           )}
           {conversations.map((conversation) => {

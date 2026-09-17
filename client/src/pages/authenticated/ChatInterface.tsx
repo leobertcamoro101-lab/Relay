@@ -9,10 +9,10 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { useHttpClient } from "../../hooks/http-hook";
-import type { ConversationSummary } from "../../../types"; 
+import type { ConversationSummary } from "../../types"; 
 import MessageInput from "../authenticated/MessageInput";
 import MessageList from "../authenticated/MessageList";
-import Sidebar from "../guest/Sidebar";
+import Sidebar from "./Sidebar";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
 const DEFAULT_ROOM = "general";

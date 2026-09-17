@@ -13,6 +13,7 @@ export interface ChatMessage {
   text: string;
   timestamp?: number;
   isMine?: boolean;
+  edited?: boolean;
 }
 
 export interface TypingUser {
