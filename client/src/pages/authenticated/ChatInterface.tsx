@@ -1,15 +1,13 @@
 import {
   useContext,
   useEffect,
-  useCallback,
   // useRef
   useState
  } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
 import { useWebSocket } from "../../hooks/useWebSocket";
-import { useHttpClient } from "../../hooks/http-hook";
-import type { ConversationSummary } from "../../types"; 
+import { useConversations } from "../../hooks/useConversations";
 import MessageInput from "../authenticated/MessageInput";
 import MessageList from "../authenticated/MessageList";
 import Sidebar from "./Sidebar";
@@ -21,8 +19,6 @@ function ChatInterface() {
   const navigate = useNavigate();
   const { logout, token } = useContext(AuthContext);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const { sendRequest: sendConversationRequest } = useHttpClient();
 
   const handleLogout = () => {
     logout();
@@ -46,72 +42,15 @@ function ChatInterface() {
     deleteMessage,   // NEW
   } = useWebSocket();
 
+  const {
+    conversations,
+    startConversation: handleStartConversation,
+    deleteConversation: handleDeleteConversation,
+  } = useConversations(token, currentRoom, switchRoom, DEFAULT_ROOM);
+
   const isDM = currentRoom.startsWith("dm_");
   const dmPartner = isDM ? users.find((u) => u.id !== currentUser?.id) : null;
   const roomLabel = isDM ? (dmPartner?.username ?? "Direct Message") : `# ${currentRoom}`;
-
-  // Direct-message conversation list — fetched separately from the
-  // WebSocket's online-users list since it needs to include DMs with
-  // people who aren't currently online (or whose account was deleted).
-  const fetchConversations = useCallback(async () => {
-    if (!token) return;
-    try {
-      const responseData = await sendConversationRequest(
-        `${import.meta.env.VITE_BACKEND_URL}/conversations`,
-        "GET",
-        null,
-        { Authorization: `Bearer ${token}` }
-      );
-      setConversations(responseData.conversations ?? []);
-    } catch {
-      // error already captured by useHttpClient's error state
-    }
-  }, [token, sendConversationRequest]);
-
-  useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations]);
-
-  const handleStartConversation = useCallback(
-    async (otherUserId: string) => {
-      if (!token) return;
-      try {
-        const responseData = await sendConversationRequest(
-          `${import.meta.env.VITE_BACKEND_URL}/conversations`,
-          "POST",
-          JSON.stringify({ otherUserId }),
-          { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
-        );
-        await fetchConversations();
-        switchRoom(responseData.roomId);
-      } catch {
-        // error already captured by useHttpClient's error state
-      }
-    },
-    [token, sendConversationRequest, fetchConversations, switchRoom]
-  );
-
-  const handleDeleteConversation = useCallback(
-    async (roomId: string) => {
-      if (!token) return;
-      if (!window.confirm("Delete this conversation? This can't be undone.")) return;
-      try {
-        await sendConversationRequest(
-          `${import.meta.env.VITE_BACKEND_URL}/conversations/${roomId}`,
-          "DELETE",
-          null,
-          { Authorization: `Bearer ${token}` }
-        );
-        setConversations((prev) => prev.filter((c) => c.roomId !== roomId));
-        if (roomId === currentRoom) {
-          switchRoom(DEFAULT_ROOM);
-        }
-      } catch {
-        // error already captured by useHttpClient's error state
-      }
-    },
-    [token, sendConversationRequest, currentRoom, switchRoom]
-  );
 
   // Auto-join using the logged-in user's name — no manual username entry
   useEffect(() => {

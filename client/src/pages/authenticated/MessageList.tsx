@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { useMessageEditing } from '../../hooks/useMessageEditing';
 import { Pencil, Trash2, Check, X } from 'lucide-react';
 import type { ChatMessage, TypingUser, User } from '../../types';
 
@@ -15,30 +16,11 @@ interface MessageListProps {
 
 const MessageList = ({ messages, currentUser, typingUsers, onEditMessage, onDeleteMessage }: MessageListProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editText, setEditText] = useState('');
+  const { editingId, editText, setEditText, startEdit, cancelEdit, saveEdit } = useMessageEditing(onEditMessage);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, typingUsers]);
-
-  const startEdit = (msg: ChatMessage) => {
-    if (!msg.id) return;
-    setEditingId(msg.id);
-    setEditText(msg.text);
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditText('');
-  };
-
-  const saveEdit = (id: string) => {
-    const trimmed = editText.trim();
-    if (trimmed) onEditMessage(id, trimmed);
-    setEditingId(null);
-    setEditText('');
-  };
 
   const handleDelete = (id: string) => {
     if (window.confirm('Delete this message?')) {
