@@ -1,9 +1,9 @@
 import { Response, NextFunction } from "express";
-import Conversation from "../models/conversation";
-import HttpError from "../models/http-error";
-import { AuthRequest } from "../middleware/check-auth";
-import { getDMRoomId } from "../util/dmRoom";
-import logger from "../util/logger";
+import Conversation from "../models/conversation.js";
+import HttpError from "../models/http-error.js";
+import { AuthRequest } from "../middleware/check-auth.js";
+import { getDMRoomId } from "../util/dmRoom.js";
+import logger from "../util/logger.js";
 
 const startConversation = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const myId = req.userData?.userId;

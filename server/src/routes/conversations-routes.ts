@@ -1,6 +1,6 @@
 import express from "express";
-import checkAuth from "../middleware/check-auth";
-import * as conversationsController from "../controllers/conversation-controller";
+import checkAuth from "../middleware/check-auth.js";
+import * as conversationsController from "../controllers/conversation-controller.js";
 
 const router = express.Router();
 
