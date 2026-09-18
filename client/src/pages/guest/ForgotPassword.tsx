@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useHttpClient } from "../../hooks/http-hook";
@@ -47,7 +48,12 @@ const ForgotPassword = () => {
             Enter your email and we'll send you a reset link
           </p>
         </div>
-
+        <Link
+        to="/relay"
+        className="inline-flex items-center gap-1 text-gray-400 hover:text-white text-sm mb-4"
+      >
+        <ArrowLeft size={16} /> Back
+      </Link>
         <Card>
           {submitted ? (
             <div className="text-center py-2">
