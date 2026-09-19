@@ -1,4 +1,5 @@
 import { Response, NextFunction } from "express";
+import mongoose from "mongoose";
 import Conversation from "../models/conversation.js";
 import HttpError from "../models/http-error.js";
 import { AuthRequest } from "../middleware/check-auth.js";
@@ -9,7 +10,7 @@ const startConversation = async (req: AuthRequest, res: Response, next: NextFunc
   const myId = req.userData?.userId;
   const { otherUserId } = req.body;
 
-  if (!myId || !otherUserId || otherUserId === myId) {
+  if (!myId || !otherUserId || otherUserId === myId || !mongoose.isValidObjectId(otherUserId)) {
     return next(new HttpError("Invalid conversation request.", 422));
   }
 

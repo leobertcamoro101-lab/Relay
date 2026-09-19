@@ -10,7 +10,10 @@ export interface ClientState {
   room: string;
 }
 
-// room name -> userId -> ClientState
+// room name -> connection id -> ClientState. Keyed by the per-connection
+// id (not userId) on purpose, so a broadcast reaches every open tab/
+// connection a user has in a room. getRoomUsers()/getRoomOnlineCount()
+// below collapse that back down to one entry per real person for display.
 const rooms = new Map<string, Map<string, ClientState>>();
 
 export function joinRoom(room: string, client: ClientState): void {
@@ -18,10 +21,10 @@ export function joinRoom(room: string, client: ClientState): void {
   rooms.get(room)!.set(client.id, client);
 }
 
-export function leaveRoom(room: string, userId: string): void {
+export function leaveRoom(room: string, connectionId: string): void {
   const members = rooms.get(room);
   if (!members) return;
-  members.delete(userId);
+  members.delete(connectionId);
   if (members.size === 0) rooms.delete(room);
 }
 
@@ -29,12 +32,22 @@ export function getRoomMembers(room: string): ClientState[] {
   return [...(rooms.get(room)?.values() ?? [])];
 }
 
+// A user can have more than one live connection in the same room — e.g.
+// two browser tabs — each its own ClientState. Collapse those down to one
+// entry per real person, so the "online" list shows who's online, not how
+// many tabs are open.
 export function getRoomUsers(room: string): User[] {
-  return getRoomMembers(room).map((c) => ({ id: c.userId, username: c.username }));
+  const seen = new Map<string, User>();
+  for (const member of getRoomMembers(room)) {
+    if (!seen.has(member.userId)) {
+      seen.set(member.userId, { id: member.userId, username: member.username });
+    }
+  }
+  return [...seen.values()];
 }
 
 export function getRoomOnlineCount(room: string): number {
-  return rooms.get(room)?.size ?? 0;
+  return getRoomUsers(room).length;
 }
 
 // Public/group rooms (e.g. "general") are open to anyone. A DM room's id

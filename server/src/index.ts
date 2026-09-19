@@ -12,6 +12,7 @@
 // ============================================
 import "./instrument.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import User from "./models/user.js";
 import "dotenv/config";
 import http from "node:http";
@@ -34,6 +35,29 @@ import app from "./app.js";
 
 const PORT = Number(process.env.PORT) || 8080;
 const DEFAULT_ROOM = "general";
+
+// Same allowlist app.ts's CORS middleware uses — kept in sync manually
+// since this file doesn't share module scope with app.ts.
+const ALLOWED_ORIGINS = ["http://localhost:5173", process.env.FRONTEND_URL];
+
+// Render sits behind a proxy, so the real client IP comes from
+// X-Forwarded-For, not the raw socket address.
+function getClientIp(request: http.IncomingMessage): string {
+  const forwarded = request.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.length > 0) {
+    return forwarded.split(",")[0].trim();
+  }
+  return request.socket.remoteAddress ?? "unknown";
+}
+
+// Caps concurrent WebSocket connections per IP. The per-message rate
+// limiter inside each connection only throttles one socket at a time —
+// without this, someone could open many sockets to multiply their
+// effective message budget. Kept generous since several people can
+// legitimately share one public IP behind an office/school network or
+// mobile carrier NAT.
+const MAX_CONNECTIONS_PER_IP = 20; // raise if you want to raise the limit
+const connectionsByIp = new Map<string, number>();
 
 function send(ws: WebSocket, message: ServerMessage): void {
   if (ws.readyState === WebSocket.OPEN) {
@@ -58,13 +82,65 @@ function broadcast(
 const server = http.createServer(app);
 
 // ---- WebSocket (chat protocol) — shares the same port ----
-const wss = new WebSocketServer({ server });
+// maxPayload caps a single incoming frame at 64KB — comfortably more than
+// a 500-char chat message needs, well short of the library's 100MB
+// default, which would otherwise let one client burn CPU/memory parsing
+// giant frames.
+const wss = new WebSocketServer({ server, maxPayload: 64 * 1024 });
 
-wss.on("connection", (ws: WebSocket) => {
+wss.on("error", (err) => {
+  console.error("WebSocketServer error:", err);
+});
+
+wss.on("connection", (ws: WebSocket, request) => {
+  // Reject sockets opened from a page we don't recognize. Auth still runs
+  // on JOIN below, so this is defense-in-depth rather than the primary
+  // protection — but there's no reason to accept connections from
+  // arbitrary origins at all.
+  const origin = request.headers.origin;
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    ws.close(4003, "Origin not allowed");
+    return;
+  }
+
+  const clientIp = getClientIp(request);
+  const currentConnections = connectionsByIp.get(clientIp) ?? 0;
+  if (currentConnections >= MAX_CONNECTIONS_PER_IP) {
+    ws.close(4008, "Too many connections from this network");
+    return;
+  }
+  connectionsByIp.set(clientIp, currentConnections + 1);
+
+  // An unhandled 'error' event on an EventEmitter is an uncaught
+  // exception in Node — without this listener, a malformed frame from a
+  // single client could crash the whole server for everyone connected.
+  ws.on("error", (err) => {
+    console.error("WebSocket connection error:", err);
+  });
+
   // Populated once this connection sends JOIN.
   let client: ClientState | null = null;
 
+  // At most RATE_LIMIT_MAX_MESSAGES every RATE_LIMIT_WINDOW_MS, per
+  // connection. Stops one compromised or malicious client from flooding
+  // the DB and every other room member with writes/broadcasts. Also
+  // covers repeated JOIN spam on one already-open socket, since the check
+  // runs before the switch statement below.
+  const RATE_LIMIT_WINDOW_MS = 10_000;
+  const RATE_LIMIT_MAX_MESSAGES = 30; // ~3/sec sustained, bursts of 30 allowed (change 30 if want to raise limit)
+  let windowStart = Date.now();
+  let messageCount = 0;
+
   ws.on("message", async (raw) => {
+    const now = Date.now();
+    if (now - windowStart > RATE_LIMIT_WINDOW_MS) {
+      windowStart = now;
+      messageCount = 0;
+    }
+    if (++messageCount > RATE_LIMIT_MAX_MESSAGES) {
+      return; // silently drop — no need to tell a flooder they've been throttled
+    }
+
     let data: ClientMessage;
     try {
       data = JSON.parse(raw.toString());
@@ -75,7 +151,7 @@ wss.on("connection", (ws: WebSocket) => {
     switch (data.type) {
       case "JOIN": {
       const token = data.token;
-      const room = data.room?.trim() || DEFAULT_ROOM;
+      const room = data.room?.trim().slice(0, 100) || DEFAULT_ROOM;
       if (!token) return;
 
       let decoded: { userId: string; email: string };
@@ -116,8 +192,6 @@ wss.on("connection", (ws: WebSocket) => {
 
       joinRoom(room, client);
       
-
-      // const history = await getRecentMessages(room); // not wrapped in try/catch it will caused back button loading forever
 
       send(ws, {
         type: "WELCOME",
@@ -188,7 +262,7 @@ wss.on("connection", (ws: WebSocket) => {
 
       case "SWITCH_ROOM": {
         if (!client) return;
-        const newRoom = data.room?.trim();
+        const newRoom = data.room?.trim().slice(0, 100);
         if (!newRoom || newRoom === client.room) return;
         if (!canJoinRoom(newRoom, client.userId)) return; // NEW — silently ignore, don't leak that the room exists
 
@@ -214,8 +288,6 @@ wss.on("connection", (ws: WebSocket) => {
         }
         joinRoom(newRoom, client);
 
-        // const history = await getRecentMessages(newRoom); // not wrapped in try/catch it will caused back button loading forever
-
         send(ws, {
           type: "ROOM_SWITCHED",
           room: newRoom,
@@ -240,7 +312,7 @@ wss.on("connection", (ws: WebSocket) => {
             case "EDIT_MESSAGE": {
         if (!client) return;
         const text = data.text?.trim().slice(0, 500);
-        if (!text || !data.id) return;
+        if (!text || !data.id || !mongoose.isValidObjectId(data.id)) return;
 
         let updated;
         try {
@@ -264,7 +336,7 @@ wss.on("connection", (ws: WebSocket) => {
 
       case "DELETE_MESSAGE": {
         if (!client) return;
-        if (!data.id) return;
+        if (!data.id || !mongoose.isValidObjectId(data.id)) return;
 
         let deleted;
         try {
@@ -287,6 +359,12 @@ wss.on("connection", (ws: WebSocket) => {
   });
 
   ws.on("close", () => {
+    const count = connectionsByIp.get(clientIp) ?? 1;
+    if (count <= 1) {
+      connectionsByIp.delete(clientIp);
+    } else {
+      connectionsByIp.set(clientIp, count - 1);
+    }
     if (!client) return;
     leaveRoom(client.room, client.id);
     broadcast(client.room, {
