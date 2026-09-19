@@ -10,17 +10,24 @@ import logger from "../util/logger.js";
 import User from "../models/user.js";
 import { AuthRequest } from "../middleware/check-auth.js";
 
+// A bcrypt hash for a password nobody actually has. Used to burn the same
+// amount of time as a real bcrypt.compare() when no matching user is
+// found, so login's response time doesn't reveal whether an email is
+// registered — without this, "no such user" returns instantly while
+// "wrong password" waits ~100ms for bcrypt, which is a timing side-channel.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync("dummy-password-for-timing-safety", 12);
+
 const getUserById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const userId = req.params.uid;
 
-  // // security check: same pattern you already use in updateProfile
-  // if (req.userData?.userId !== userId) {
-  //   return next(new HttpError("You are not allowed to view this profile.", 403));
-  // }
+  // security check: same pattern you already use in updateProfile
+  if (req.userData?.userId !== userId) {
+    return next(new HttpError("You are not allowed to view this profile.", 403));
+  }
 
   let user;
   try {
-    user = await User.findById(userId).select("-password");
+    user = await User.findById(userId).select("-password -resetPasswordToken -resetPasswordExpires");
   } catch (err) {
     logger.error({ err }, "Get user by id failed");
     return next(new HttpError("Something went wrong, could not fetch profile.", 500));
@@ -144,19 +151,20 @@ const login = async (req: AuthRequest, res: Response, next: NextFunction) => {
     return next(new HttpError("Logging in failed, please try again later.", 500));
   }
 
-  if (!existingUser) {
-    return next(new HttpError("Invalid credentials, could not log you in", 403));
-  }
+  // Compare against the real hash if the user exists, or the dummy hash if
+  // not — either way bcrypt.compare() runs, so timing doesn't leak which
+  // case we're in.
+  const passwordToCompare = existingUser ? existingUser.password : DUMMY_PASSWORD_HASH;
 
   let isValidPassword = false;
   try {
-    isValidPassword = await bcrypt.compare(password, existingUser.password);
+    isValidPassword = await bcrypt.compare(password, passwordToCompare);
   } catch (err) {
-    logger.error({ err }, "login failed"); 
+    logger.error({ err }, "login failed");
     return next(new HttpError("Could not log you in please check credentials and try again", 500));
   }
 
-  if (!isValidPassword) {
+  if (!existingUser || !isValidPassword) {
     return next(new HttpError("Invalid credentials, could not log you in", 403));
   }
 
@@ -168,7 +176,6 @@ const login = async (req: AuthRequest, res: Response, next: NextFunction) => {
       { expiresIn: "1h" }
     );
   } catch (err) {
-    // console.log(err);
     logger.error({ err }, "login failed");
     return next(new HttpError("Logging in failed, please try again.", 500));
   }
@@ -220,6 +227,10 @@ const forgotPassword = async (req: AuthRequest, res: Response, next: NextFunctio
 };
 
 const resetPassword = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  // Validation error
+  if (req.validationError) {
+    return next(new HttpError("Invalid inputs passed, please check your data.", 422));
+  }
   const { token, password } = req.body;
 
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
@@ -336,6 +347,10 @@ const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction
 };
 
 const changePassword = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  // validation Error
+  if (req.validationError) {
+    return next(new HttpError("Invalid inputs passed, please check your data.", 422));
+  }
   const userId = req.params.uid;
 
   // security check: ensure the user making the request is the same as the user being updated

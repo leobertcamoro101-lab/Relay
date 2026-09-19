@@ -1,6 +1,6 @@
 import express from "express";
 import { validateBody } from "../middleware/validate-zod.js";
-import { signupSchema, updateProfileSchema } from "../schemas/user-schemas.js";
+import { signupSchema, updateProfileSchema, resetPasswordSchema, changePasswordSchema } from "../schemas/user-schemas.js";
 import rateLimit from "express-rate-limit";
 
 import * as usersController from "../controllers/users-controller.js";
@@ -23,8 +23,6 @@ const forgotPasswordLimiter = rateLimit({
   message: { message: "Too many password reset requests, please try again later." },
 });
 
-router.get("/:uid", usersController.getUserById);
-
 router.post(
   "/signup", 
   authLimiter, 
@@ -35,11 +33,17 @@ router.post(
 );
 router.post("/login", authLimiter, usersController.login);
 router.post("/forgot-password", forgotPasswordLimiter, usersController.forgotPassword);
-router.post("/reset-password", authLimiter, usersController.resetPassword);
+router.post(
+  "/reset-password", 
+  authLimiter, 
+  [validateBody(resetPasswordSchema)],
+  usersController.resetPassword
+);
 // Everything below this line requires a valid token
 router.use(checkAuth);
 
 router.get("/", usersController.searchUsers);
+router.get("/:uid", usersController.getUserById);
 
 router.patch(
   "/:uid",
@@ -50,6 +54,10 @@ router.patch(
   ],
   usersController.updateProfile
 );
-router.patch("/:uid/password", usersController.changePassword);
+router.patch(
+  "/:uid/password", 
+  [validateBody(changePasswordSchema)],
+  usersController.changePassword
+);
 
 export default router;

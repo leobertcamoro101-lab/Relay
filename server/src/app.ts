@@ -11,6 +11,7 @@ import conversationsRoutes from './routes/conversations-routes.js';
 import HttpError from './models/http-error.js';
 
 const app = express();
+app.set("trust proxy", 1);
 
 app.use(pinoHttp({ logger }));
 
@@ -22,6 +23,18 @@ app.use(bodyParser.json());
 app.use((req, res, next) => {
   if (req.body) {
     req.body = mongoSanitize.sanitize(req.body);
+  }
+  if (req.params) {
+    const sanitized = mongoSanitize.sanitize(req.params);
+    for (const key of Object.keys(sanitized)) {
+      (req.params as any)[key] = sanitized[key];
+    }
+  }
+  if (req.query) {
+    const sanitized = mongoSanitize.sanitize(req.query);
+    for (const key of Object.keys(sanitized)) {
+      (req.query as any)[key] = sanitized[key];
+    }
   }
   next();
 });
