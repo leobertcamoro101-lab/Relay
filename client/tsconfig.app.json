@@ -22,5 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "../Claude outputs/MainUserInterface.tsx"]
+  "include": ["src"]
 }
