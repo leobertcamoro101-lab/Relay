@@ -30,3 +30,8 @@ dist
 
 # to check error in Typescript
 npx tsc --noEmit  
+
+# vercel off autodeploy
+"git": {
+    "deploymentEnabled": false
+  }
