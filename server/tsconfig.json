@@ -16,6 +16,6 @@
     "types": ["node"],
     "allowJs": true
   },
-  "include": ["**/*.ts", "**/*.js", "types/**/*.d.ts", "vitest.config.mts"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "include": ["**/*.ts", "**/*.js", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "tests", "vitest.config.mts"]
 }
