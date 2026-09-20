@@ -178,7 +178,7 @@ wss.on("connection", (ws: WebSocket, request) => {
         ws.close(4003, "Not a participant in this conversation");
         return;
       }
-      
+
       const username = user.name.slice(0, 20);
       client = { ws, id: randomUUID(), userId: decoded.userId, username, room };
 
@@ -191,7 +191,7 @@ wss.on("connection", (ws: WebSocket, request) => {
       }
 
       joinRoom(room, client);
-      
+
 
       send(ws, {
         type: "WELCOME",
@@ -377,6 +377,7 @@ wss.on("connection", (ws: WebSocket, request) => {
     });
   });
 });
+
 async function main() {
   await connectDB();
   server.listen(PORT, () => {
@@ -386,4 +387,13 @@ async function main() {
   });
 }
 
-main();
+// Tests import `server`/`wss` directly and drive them with real ws clients
+// against an ephemeral port (server.listen(0, ...)) — they never want this
+// module to also connect to the real database or bind to the real PORT on
+// import, so this only runs outside the test environment. Vitest sets
+// NODE_ENV=test automatically.
+if (process.env.NODE_ENV !== "test") {
+  main();
+}
+
+export { server, wss };

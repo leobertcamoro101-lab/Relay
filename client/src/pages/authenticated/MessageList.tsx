@@ -49,10 +49,10 @@ const MessageList = ({
     }
   };
 
-  
+
 
   return (
-    
+
     <div className="flex-1 overflow-y-auto p-4 space-y-2">
       {messages.map((msg, i) => {
         if (msg.type === "SYSTEM") {
@@ -88,7 +88,8 @@ const MessageList = ({
                       <button
                         onClick={() => setOpenMessageId(isMenuOpen ? null : msg.id!)}
                         className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
-                        
+                        title="Message options"
+                        aria-label="Message options"
                       >
                         <MoreVertical size={20} />
                       </button>

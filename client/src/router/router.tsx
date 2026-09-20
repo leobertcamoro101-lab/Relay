@@ -5,15 +5,8 @@ import {
 } from "react-router-dom";
 import RootLayout from "../Navigation/RootLayout";
 import RedirectIfAuthenticated from "../Navigation/RedirectIfAuthenticated";
-import Login from "../pages/guest/Login";
-import Signup from "../pages/guest/Signup";
-import ChatInterface from "../pages/authenticated/ChatInterface";
 import RequireAuth from "../Navigation/RequireAuth";
-import Profile from "../pages/authenticated/Profile";
-import EditProfile from "../pages/authenticated/EditProfile";
-import ForgotPassword from "../pages/guest/ForgotPassword";
-import ResetPassword from "../pages/guest/ResetPassword";
-import ChangePassword from "../pages/authenticated/ChangePassword";
+import { Login, Signup, ChatInterface, Profile, EditProfile, ForgotPassword, ResetPassword, ChangePassword } from "./routes-config";
 
 
 const routes: RouteObject[] = [
