@@ -96,9 +96,21 @@ jobs:
         working-directory: e2e
         run: npm ci
 
-      - name: Install Playwright browsers
-        working-directory: e2e
-        run: npx playwright install --with-deps chromium
+      - name: Verify Chrome is available
+        # playwright.config.ts runs with channel: "chrome" — the real
+        # Google Chrome, not Playwright's own downloaded Chromium — since
+        # GitHub's ubuntu-latest runners ship it preinstalled. This skips
+        # the Playwright browser download entirely (the same CDN download
+        # that turned out to be unreliable on at least one dev machine —
+        # see e2e/README.md). If a runner image ever stops shipping Chrome,
+        # this step fails fast with a clear message instead of the less
+        # obvious "channel not found" error Playwright itself would give.
+        run: |
+          if ! command -v google-chrome >/dev/null 2>&1; then
+            echo "::error::google-chrome not found on this runner. Either the runner image changed, or fall back to 'npx playwright install --with-deps chromium' in e2e/ and drop channel: \"chrome\" from playwright.config.ts."
+            exit 1
+          fi
+          google-chrome --version
 
       - name: Run Playwright tests
         working-directory: e2e
