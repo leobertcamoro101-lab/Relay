@@ -58,6 +58,63 @@ jobs:
       - name: Run tests
         run: npm test
 
+  e2e-tests:
+    name: E2E tests (Playwright)
+    runs-on: ubuntu-latest
+    # Non-blocking while this suite is new and settling in: a flake here
+    # is surfaced (the job still runs and reports real pass/fail below)
+    # but never fails the whole workflow or the commit's checks, and
+    # `deploy` below doesn't `need` this job — so it can't hold up or
+    # break a real deploy. Once it's proven stable, drop
+    # `continue-on-error` and add `e2e-tests` to deploy's `needs` list to
+    # make it a real gate like the two jobs above.
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Install e2e dependencies
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        working-directory: e2e
+        # playwright.config.ts starts the real server (tests/e2e-server.ts,
+        # in-memory MongoDB) and the real Vite dev client itself — nothing
+        # extra needs to be running here.
+        run: npm test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14
+
   deploy:
     name: Deploy to Render + Vercel
     runs-on: ubuntu-latest
