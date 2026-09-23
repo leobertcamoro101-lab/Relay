@@ -76,6 +76,7 @@ const Signup = () => {
                 {...register("firstName")}
                 placeholder="John"
                 className={inputClass(!!errors.firstName)}
+                autoComplete="given-name"
               />
             </FormField>
             <FormField label="Last Name" error={errors.lastName}>
@@ -83,6 +84,7 @@ const Signup = () => {
                 {...register("lastName")}
                 placeholder="Doe"
                 className={inputClass(!!errors.lastName)}
+                autoComplete="family-name"
               />
             </FormField>
           </div>
@@ -93,6 +95,7 @@ const Signup = () => {
                 {...register("birthday")}
                 type="date"
                 className={inputClass(!!errors.birthday)}
+                autoComplete="bday"
               />
             </FormField>
             <FormField label="Gender" error={errors.gender}>
@@ -115,6 +118,7 @@ const Signup = () => {
               type="email"
               placeholder="john@example.com"
               className={inputClass(!!errors.email)}
+              autoComplete="email"
             />
           </FormField>
 
@@ -128,6 +132,7 @@ const Signup = () => {
               type="password"
               placeholder="••••••••"
               className={inputClass(!!errors.password)}
+              autoComplete="new-password"
             />
           </FormField>
 

@@ -125,12 +125,14 @@ const EditProfile = () => {
                 <input
                   {...register("firstName")}
                   className={inputClass(!!errors.firstName)}
+                  autoComplete="given-name"
                 />
               </FormField>
               <FormField label="Last Name" error={errors.lastName}>
                 <input
                   {...register("lastName")}
                   className={inputClass(!!errors.lastName)}
+                  autoComplete="family-name"
                 />
               </FormField>
             </div>
@@ -141,6 +143,7 @@ const EditProfile = () => {
                   {...register("birthday")}
                   type="date"
                   className={inputClass(!!errors.birthday)}
+                  autoComplete="bday"
                 />
               </FormField>
               <FormField label="Gender" error={errors.gender}>
@@ -160,6 +163,7 @@ const EditProfile = () => {
                 {...register("email")}
                 type="email"
                 className={inputClass(!!errors.email)}
+                autoComplete="email"
               />
             </FormField>
 

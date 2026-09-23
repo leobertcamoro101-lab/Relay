@@ -75,6 +75,7 @@ const Login = () => {
                 type="email"
                 placeholder="john@example.com"
                 className={inputClass(!!errors.email)}
+                autoComplete="email"
                 autoFocus
               />
             </FormField>
@@ -85,6 +86,7 @@ const Login = () => {
                 type="password"
                 placeholder="••••••••"
                 className={inputClass(!!errors.password)}
+                autoComplete="current-password"
               />
             </FormField>
 

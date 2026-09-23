@@ -80,6 +80,7 @@ const ResetPassword = () => {
                     type="password"
                     placeholder="••••••••"
                     className={inputClass(!!errors.password)}
+                    autoComplete="new-password"
                     autoFocus
                   />
                 </FormField>
@@ -90,6 +91,7 @@ const ResetPassword = () => {
                     type="password"
                     placeholder="••••••••"
                     className={inputClass(!!errors.confirmPassword)}
+                    autoComplete="new-password"
                   />
                 </FormField>
 

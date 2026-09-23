@@ -82,6 +82,7 @@ const ChangePassword = () => {
                     type="password"
                     placeholder="••••••••"
                     className={inputClass(!!errors.currentPassword)}
+                    autoComplete="current-password"
                     autoFocus
                   />
                 </FormField>
@@ -96,6 +97,7 @@ const ChangePassword = () => {
                     type="password"
                     placeholder="••••••••"
                     className={inputClass(!!errors.newPassword)}
+                    autoComplete="new-password"
                   />
                 </FormField>
 
@@ -105,6 +107,7 @@ const ChangePassword = () => {
                     type="password"
                     placeholder="••••••••"
                     className={inputClass(!!errors.confirmNewPassword)}
+                    autoComplete="new-password"
                   />
                 </FormField>
 
