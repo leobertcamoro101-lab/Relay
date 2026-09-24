@@ -3,10 +3,10 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 
 const sendRequest = vi.fn();
 
-// useConversations.ts imports `useHttpClient` from "./http-hook" — mocking
+// useConversations.ts imports `useHttpClient` from "./useHttpClient" — mocking
 // it here isolates the hook under test from fetch/AbortController/the
 // LoadingContext it would otherwise need a provider for.
-vi.mock("../../src/hooks/http-hook", () => ({
+vi.mock("../../src/hooks/useHttpClient.ts", () => ({
   useHttpClient: () => ({ sendRequest }),
 }));
 

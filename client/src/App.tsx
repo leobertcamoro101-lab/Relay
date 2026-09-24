@@ -2,7 +2,7 @@ import { RouterProvider } from 'react-router-dom';
 
 import { AuthContext } from './context/auth-context';
 import { LoadingProvider } from './context/LoadingProvider';
-import { useAuth } from './hooks/auth-hook';
+import { useAuth } from './hooks/useAuth';
 import router from './router/router';
 
 function App() {

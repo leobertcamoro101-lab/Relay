@@ -100,7 +100,7 @@ export async function signupViaApi(
 /**
  * Puts a page into the same "already logged in" state the real app
  * reaches after Login.tsx/Signup.tsx call `auth.login(...)` — see
- * client/src/hooks/auth-hook.ts, which persists exactly this shape under
+ * client/src/hooks/useAuth.ts, which persists exactly this shape under
  * localStorage["userData"]. Navigates to the app first if the page has no
  * origin yet (localStorage needs a same-origin document to write to).
  */

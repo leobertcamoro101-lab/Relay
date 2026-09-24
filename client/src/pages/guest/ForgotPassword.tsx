@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useHttpClient } from "../../hooks/http-hook";
+import { useHttpClient } from "../../hooks/useHttpClient";
 import { forgotPasswordSchema, type ForgotPasswordInfo } from "../../schemas/forgotPassword";
 import Card from "../../components/Card";
 import FormField from "../../components/FormField";

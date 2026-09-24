@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../context/auth-context";
-import { useHttpClient } from "../../hooks/http-hook";
+import { useHttpClient } from "../../hooks/useHttpClient";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import Avatar from "../../components/Avatar";

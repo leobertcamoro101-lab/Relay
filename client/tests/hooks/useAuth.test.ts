@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useAuth } from "../../src/hooks/auth-hook";
+import { useAuth } from "../../src/hooks/useAuth";
 
 beforeEach(() => {
   localStorage.clear();

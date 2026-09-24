@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { AuthContext } from "../../context/auth-context";
-import { useHttpClient } from "../../hooks/http-hook";
+import { useHttpClient } from "../../hooks/useHttpClient";
 import Avatar from "../../components/Avatar";
 
 interface FoundUser {

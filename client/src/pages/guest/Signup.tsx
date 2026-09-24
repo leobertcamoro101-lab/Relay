@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
-import { useHttpClient } from "../../hooks/http-hook";
+import { useHttpClient } from "../../hooks/useHttpClient";
 import { personalInfoSchema, type PersonalInfo } from "../../schemas/signup";
 import FormField from "../../components/FormField";
 import { inputClass } from "../../components/Formfield/inputClass";

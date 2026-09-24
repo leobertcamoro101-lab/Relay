@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useHttpClient } from "../../hooks/http-hook";
+import { useHttpClient } from "../../hooks/useHttpClient";
 import { resetPasswordSchema, type ResetPasswordInfo } from "../../schemas/resetPassword";
 import Card from "../../components/Card";
 import FormField from "../../components/FormField";

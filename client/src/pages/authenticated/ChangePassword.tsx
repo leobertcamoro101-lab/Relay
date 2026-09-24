@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { AuthContext } from "../../context/auth-context";
-import { useHttpClient } from "../../hooks/http-hook";
+import { useHttpClient } from "../../hooks/useHttpClient";
 import { changePasswordSchema, type ChangePasswordInfo } from "../../schemas/changePassword";
 import FormField from "../../components/FormField";
 import { inputClass } from "../../components/Formfield/inputClass";

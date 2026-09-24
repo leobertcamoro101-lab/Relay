@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useHttpClient } from "./http-hook";
+import { useHttpClient } from "./useHttpClient";
 import type { ConversationSummary } from "../types";
 
 // Owns the Direct Messages list: fetching it on mount, starting a new

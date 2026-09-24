@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
 const sendRequest = vi.fn();
-vi.mock("../../src/hooks/http-hook", () => ({
+vi.mock("../../src/hooks/useHttpClient.ts", () => ({
   useHttpClient: () => ({ sendRequest }),
 }));
 
