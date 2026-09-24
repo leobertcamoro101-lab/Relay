@@ -46,12 +46,15 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t border-gray-700 flex gap-2">
       <input
+        id="message-text"
+        name="message"
         type="text"
         value={text}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder="Type a message..."
         maxLength={500}
+        autoComplete="off"
         className="flex-1 bg-gray-800 border border-gray-700 text-white text-sm
                    rounded-xl px-4 py-2.5 outline-none focus:border-violet-400
                    transition-colors placeholder-gray-600"

@@ -55,10 +55,13 @@ const UserSearch = ({ onSelectUser }: UserSearchProps) => {
   return (
     <div className="relative px-3 pb-3">
       <input
+        id="user-search"
+        name="userSearch"
         type="text"
         value={query}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Find people..."
+        autoComplete="off"
         className="w-full bg-gray-800 text-white text-sm rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
       />
 
