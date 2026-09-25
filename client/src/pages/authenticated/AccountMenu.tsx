@@ -22,22 +22,22 @@ function AccountMenu() {
   if (!auth.isLoggedIn) return null;
 
   const linkClasses =
-    'w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 no-underline';
+    'w-full flex items-center gap-2 px-4 py-2 text-sm text-relay-ink-muted hover:bg-relay-hover no-underline';
 	return (
 		<div className="relative " ref={menuRef}>
       <button
         onClick={() => setMenuOpen((open) => !open)}
-        className="flex items-center gap-1 px-2 py-1.5 rounded-full hover:bg-gray-100 transition-colors"
+        className="flex items-center gap-1 px-2 py-1.5 rounded-full hover:bg-relay-hover transition-colors"
         aria-label="Account menu"
       >
         <div className="w-8 h-8">
           <Avatar image={auth.image ?? undefined} alt="Profile" name={auth.name ?? undefined} width="32px" />
         </div>
-        <ChevronDown size={16} className="text-gray-500" />
+        <ChevronDown size={16} className="text-relay-ink-subtle" />
       </button>
 
       {menuOpen && (
-        <div className="absolute left-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+        <div className="absolute left-0 bottom-full mb-2 w-48 bg-relay-surface rounded-lg shadow-lg border border-relay-border py-1 z-20">
           <Link to="/profile" onClick={() => setMenuOpen(false)} className={linkClasses}>
             <User size={16} /> Profile
           </Link>

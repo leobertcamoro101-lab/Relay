@@ -7,11 +7,11 @@ function LoadingSpinner({ asOverlay }: LoadingSpinnerProps) {
     <div
       className={`${
         asOverlay
-          ? 'absolute top-0 left-0 h-full w-full bg-white/90 flex justify-center items-center'
+          ? 'absolute top-0 left-0 h-full w-full bg-relay-bg/90 flex justify-center items-center'
           : ''
       }`}
     >
-      <div className="w-16 h-16 rounded-full border-[5px] border-blue-400 border-r-transparent border-l-transparent animate-spin" />
+      <div className="w-16 h-16 rounded-full border-[5px] border-relay-accent border-r-transparent border-l-transparent animate-spin" />
     </div>
   );
 }

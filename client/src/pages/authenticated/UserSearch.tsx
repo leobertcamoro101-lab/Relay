@@ -62,16 +62,16 @@ const UserSearch = ({ onSelectUser }: UserSearchProps) => {
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Find people..."
         autoComplete="off"
-        className="w-full bg-gray-800 text-white text-sm rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+        className="w-full bg-relay-hover text-relay-ink text-sm rounded-lg px-3 py-2 placeholder-relay-ink-subtle focus:outline-none focus:ring-1 focus:ring-relay-accent"
       />
 
       {open && results.length > 0 && (
-        <div className="absolute left-3 right-3 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+        <div className="absolute left-3 right-3 mt-1 bg-relay-surface border border-relay-border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
           {results.map((u) => (
             <button
               key={u.id}
               onClick={() => handleSelect(u)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700"
+              className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-relay-ink-muted hover:bg-relay-hover"
             >
               <div className="w-6 h-6 shrink-0">
                 <Avatar image={u.image} alt={u.firstName} width="24px" />
@@ -83,7 +83,7 @@ const UserSearch = ({ onSelectUser }: UserSearchProps) => {
       )}
 
       {open && results.length === 0 && query.trim() && (
-        <div className="absolute left-3 right-3 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 px-3 py-2 text-sm text-gray-500">
+        <div className="absolute left-3 right-3 mt-1 bg-relay-surface border border-relay-border rounded-lg shadow-lg z-10 px-3 py-2 text-sm text-relay-ink-subtle">
           No users found.
         </div>
       )}

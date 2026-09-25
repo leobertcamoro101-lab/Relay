@@ -70,13 +70,13 @@ function ChatInterface() {
   // Waiting on the auto-connect
   if (status !== "connected" || !currentUser) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.10),transparent_65%)]">
+      <div className="h-screen flex items-center justify-center bg-relay-bg">
         <LoadingSpinner />
       </div>
     );
   }
   return (
-    <div className="h-screen flex bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.10),transparent_65%)] overflow-hidden">
+    <div className="h-screen flex bg-relay-bg overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         currentRoom={currentRoom}
@@ -94,11 +94,11 @@ function ChatInterface() {
       {/* Chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="bg-gray-900 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+        <div className="bg-relay-surface border-b border-relay-border px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden text-gray-400 hover:text-white transition-colors"
+            className="md:hidden text-relay-ink-subtle hover:text-relay-ink transition-colors"
             aria-label="Open menu"
           >
             <svg
@@ -117,19 +117,19 @@ function ChatInterface() {
             </svg>
           </button>
           <div>
-            <h2 className="text-white font-bold">{roomLabel}</h2>
-            <p className="text-gray-500 text-xs">{onlineCount} online</p>
+            <h2 className="text-relay-ink font-bold">{roomLabel}</h2>
+            <p className="text-relay-ink-subtle text-xs">{onlineCount} online</p>
           </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            <span className="text-green-400 text-xs font-mono">
+            <span className="w-2 h-2 bg-relay-online rounded-full animate-pulse" />
+            <span className="text-relay-online text-xs font-mono">
               WebSocket connected
             </span>
             <button
               onClick={handleLogout}
               title="Log out"
-              className="ml-2 text-gray-400 hover:text-white transition-colors"
+              className="ml-2 text-relay-ink-subtle hover:text-relay-ink transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

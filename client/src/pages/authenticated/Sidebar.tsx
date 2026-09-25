@@ -42,14 +42,14 @@ const Sidebar = ({
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-      setOpenMenuRoomId(null);
-    }
-  };
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => document.removeEventListener("mousedown", handleClickOutside);
-}, []);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuRoomId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -62,19 +62,19 @@ const Sidebar = ({
       )}
 
       <div
-        className={`fixed md:static inset-y-0 left-0 z-40 w-56 bg-gray-900 border-r border-gray-700 flex flex-col transform transition-transform md:translate-x-0 ${
+        className={`fixed md:static inset-y-0 left-0 z-40 w-56 bg-relay-surface border-r border-relay-border flex flex-col transform transition-transform md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* App name */}
-        <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+        <div className="p-4 border-b border-relay-border flex items-center justify-between">
           <div>
-            <h1 className="text-white font-bold">💬 Relay</h1>
-            <p className="text-violet-400 font-mono text-xs">WebSocket</p>
+            <h1 className="text-relay-ink font-bold">💬 Relay</h1>
+            <p className="text-relay-accent-ink font-mono text-xs">WebSocket</p>
           </div>
           <button
             onClick={onClose}
-            className="md:hidden text-gray-400 hover:text-white transition-colors"
+            className="md:hidden text-relay-ink-subtle hover:text-relay-ink transition-colors"
             aria-label="Close menu"
           >
             <X size={20} />
@@ -84,15 +84,15 @@ const Sidebar = ({
         <div className="flex-1 overflow-y-auto">
           {/* Rooms */}
           <div className="p-3">
-            <p className="text-gray-500 text-xs uppercase tracking-widest mb-2 px-2">Rooms</p>
+            <p className="text-relay-ink-subtle text-xs uppercase tracking-widest mb-2 px-2">Rooms</p>
             {ROOMS.map((room) => (
               <button
                 key={room}
                 onClick={() => room !== currentRoom && onSwitchRoom(room)}
                 className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-colors mb-1 ${
                   room === currentRoom
-                    ? 'bg-violet-500/20 text-violet-300 font-medium'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-relay-accent/12 text-relay-accent-ink font-medium'
+                    : 'text-relay-ink-muted hover:bg-relay-hover hover:text-relay-ink'
                 }`}
               >
                 # {room}
@@ -101,13 +101,13 @@ const Sidebar = ({
           </div>
 
           {/* Direct messages */}
-          <div className="p-3 border-t border-gray-700">
-            <p className="text-gray-500 text-xs uppercase tracking-widest mb-2 px-2">
+          <div className="p-3 border-t border-relay-border">
+            <p className="text-relay-ink-subtle text-xs uppercase tracking-widest mb-2 px-2">
               Direct Messages
             </p>
             <UserSearch onSelectUser={onStartConversation} />
             {conversations.length === 0 && (
-              <p className="text-gray-600 text-xs px-2">
+              <p className="text-relay-ink-subtle text-xs px-2">
                 Search above, or click an online user below, to start a DM.
               </p>
             )}
@@ -120,12 +120,12 @@ const Sidebar = ({
                   key={conversation.roomId}
                   className={`group w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors mb-1 cursor-pointer ${
                     isActive
-                      ? 'bg-violet-500/20 text-violet-300 font-medium'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                      ? 'bg-relay-accent/12 text-relay-accent-ink font-medium'
+                      : 'text-relay-ink-muted hover:bg-relay-hover hover:text-relay-ink'
                   }`}
                   onClick={() => onSwitchRoom(conversation.roomId)}
                 >
-                  <span className={`truncate flex-1 ${!conversation.otherUser ? 'italic text-gray-500' : ''}`}>
+                  <span className={`truncate flex-1 ${!conversation.otherUser ? 'italic text-relay-ink-subtle' : ''}`}>
                     {label}
                   </span>
                   <div className="hidden group-hover:flex items-center gap-1">
@@ -137,12 +137,12 @@ const Sidebar = ({
                         }}
                         title="Conversation options"
                         aria-label={`Options for ${label}`}
-                        className="p-1 rounded-full text-gray-500 hover:text-white hover:bg-gray-700 shrink-0"
+                        className="p-1 rounded-full text-relay-ink-subtle hover:text-relay-ink hover:bg-relay-hover shrink-0"
                       >
                         <MoreVertical size={14} />
                       </button>
                       {isMenuOpen && (
-                        <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                        <div className="absolute right-0 top-full mt-1 w-40 bg-relay-surface rounded-lg shadow-lg border border-relay-border py-1 z-10">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -163,8 +163,8 @@ const Sidebar = ({
           </div>
 
           {/* Online users */}
-          <div className="p-3 border-t border-gray-700">
-            <p className="text-gray-500 text-xs uppercase tracking-widest mb-2 px-2">
+          <div className="p-3 border-t border-relay-border">
+            <p className="text-relay-ink-subtle text-xs uppercase tracking-widest mb-2 px-2">
               Online — {onlineCount}
             </p>
             {users.map((user) => {
@@ -174,13 +174,13 @@ const Sidebar = ({
                   key={user.id}
                   onClick={() => !isMe && onStartConversation(user.id)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${
-                    isMe ? '' : 'cursor-pointer hover:bg-gray-800'
+                    isMe ? '' : 'cursor-pointer hover:bg-relay-hover'
                   }`}
                   title={isMe ? undefined : `Message ${user.username}`}
                 >
-                  <span className="w-2 h-2 bg-green-400 rounded-full shrink-0" />
+                  <span className="w-2 h-2 bg-relay-online rounded-full shrink-0" />
                   <span className={`text-sm truncate ${
-                    isMe ? 'text-violet-300 font-medium' : 'text-gray-400'
+                    isMe ? 'text-relay-accent-ink font-medium' : 'text-relay-ink-muted'
                   }`}>
                     {user.username}
                     {isMe && ' (you)'}
@@ -192,11 +192,11 @@ const Sidebar = ({
         </div>
 
         {/* Current user */}
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-relay-border">
           <div className="flex items-center gap-2">
             <AccountMenu/>
-            <span className="w-2 h-2 bg-green-400 rounded-full" />
-            <span className="text-white text-sm font-medium truncate">
+            <span className="w-2 h-2 bg-relay-online rounded-full" />
+            <span className="text-relay-ink text-sm font-medium truncate">
               {currentUser?.username}
             </span>
           </div>

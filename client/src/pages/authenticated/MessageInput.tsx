@@ -44,7 +44,7 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-gray-700 flex gap-2">
+    <form onSubmit={handleSubmit} className="p-4 border-t border-relay-border flex gap-2">
       <input
         id="message-text"
         name="message"
@@ -55,14 +55,14 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
         placeholder="Type a message..."
         maxLength={500}
         autoComplete="off"
-        className="flex-1 bg-gray-800 border border-gray-700 text-white text-sm
-                   rounded-xl px-4 py-2.5 outline-none focus:border-violet-400
-                   transition-colors placeholder-gray-600"
+        className="flex-1 bg-relay-hover border border-relay-border text-relay-ink text-sm
+                   rounded-xl px-4 py-2.5 outline-none focus:border-relay-accent
+                   transition-colors placeholder-relay-ink-subtle"
       />
       <button
         type="submit"
         disabled={!text.trim()}
-        className="bg-violet-500 hover:bg-violet-400 disabled:opacity-50
+        className="bg-relay-accent hover:bg-relay-accent-ink disabled:opacity-50
                    text-white font-bold px-5 py-2.5 rounded-xl transition-colors shrink-0"
       >
         Send

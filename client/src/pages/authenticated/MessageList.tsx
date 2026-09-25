@@ -58,7 +58,7 @@ const MessageList = ({
         if (msg.type === "SYSTEM") {
           return (
             <div key={i} className="text-center">
-              <span className="text-gray-600 text-xs">{msg.text}</span>
+              <span className="text-relay-ink-subtle text-xs">{msg.text}</span>
             </div>
           );
         }
@@ -76,7 +76,7 @@ const MessageList = ({
               className={`group max-w-xs sm:max-w-md ${isMine ? "items-end" : "items-start"} flex flex-col`}
             >
               {!isMine && (
-                <span className="text-xs text-gray-500 mb-1 ml-1">
+                <span className="text-xs text-relay-ink-subtle mb-1 ml-1">
                   {msg.username}
                 </span>
               )}
@@ -87,18 +87,18 @@ const MessageList = ({
                     <div className="relative" ref={isMenuOpen ? menuRef : undefined}>
                       <button
                         onClick={() => setOpenMessageId(isMenuOpen ? null : msg.id!)}
-                        className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
+                        className="p-2 rounded-full hover:bg-relay-hover text-relay-ink-subtle"
                         title="Message options"
                         aria-label="Message options"
                       >
                         <MoreVertical size={20} />
                       </button>
                       {isMenuOpen && (
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-relay-surface rounded-lg shadow-lg border border-relay-border py-1 z-10">
                           <button
                             onClick={() => { setOpenMessageId(null); startEdit(msg); }}
                             title="Edit message"
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 bg-transparent border-0 rounded-none m-0 justify-start"
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-relay-ink-muted hover:bg-relay-hover bg-transparent border-0 rounded-none m-0 justify-start"
                           >
                             <Pencil className="w-3.5 h-3.5" /> Edit
                           </button>
@@ -125,19 +125,19 @@ const MessageList = ({
                         if (e.key === "Enter") saveEdit(msg.id!);
                         if (e.key === "Escape") cancelEdit();
                       }}
-                      className="px-3 py-1.5 rounded-xl text-sm bg-gray-800 text-white border border-violet-500 focus:outline-none"
+                      className="px-3 py-1.5 rounded-xl text-sm bg-relay-surface text-relay-ink border border-relay-accent focus:outline-none"
                     />
                     <button
                       onClick={() => saveEdit(msg.id!)}
                       title="Save"
-                      className="text-green-400 hover:text-green-300"
+                      className="text-relay-online hover:text-relay-online/80"
                     >
                       <Check className="w-4 h-4" />
                     </button>
                     <button
                       onClick={cancelEdit}
                       title="Cancel"
-                      className="text-gray-400 hover:text-white"
+                      className="text-relay-ink-subtle hover:text-relay-ink"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -146,8 +146,8 @@ const MessageList = ({
                   <div
                     className={`px-4 py-2.5 rounded-2xl text-sm ${
                       isMine
-                        ? "bg-violet-500 text-white rounded-tr-sm"
-                        : "bg-gray-700 text-gray-100 rounded-tl-sm"
+                        ? "bg-relay-accent text-white rounded-tr-sm"
+                        : "bg-relay-hover text-relay-ink rounded-tl-sm"
                     }`}
                   >
                     {msg.text}
@@ -155,7 +155,7 @@ const MessageList = ({
                 )}
               </div>
 
-              <span className="text-xs text-gray-600 mt-1 mx-1">
+              <span className="text-xs text-relay-ink-subtle mt-1 mx-1">
                 {msg.timestamp ? formatTime(msg.timestamp) : ""}
                 {msg.edited ? " (edited)" : ""}
               </span>
@@ -166,23 +166,23 @@ const MessageList = ({
 
       {typingUsers.length > 0 && (
         <div className="flex justify-start">
-          <div className="bg-gray-700 rounded-2xl rounded-tl-sm px-4 py-2.5">
+          <div className="bg-relay-hover rounded-2xl rounded-tl-sm px-4 py-2.5">
             <div className="flex items-center gap-2">
               <div className="flex gap-1">
                 <span
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce"
                   style={{ animationDelay: "0ms" }}
                 />
                 <span
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce"
                   style={{ animationDelay: "150ms" }}
                 />
                 <span
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce"
                   style={{ animationDelay: "300ms" }}
                 />
               </div>
-              <span className="text-gray-400 text-xs">
+              <span className="text-relay-ink-subtle text-xs">
                 {typingUsers.map((u) => u.username).join(", ")} typing...
               </span>
             </div>

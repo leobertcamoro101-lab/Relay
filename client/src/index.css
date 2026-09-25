@@ -1,10 +1,34 @@
 @import "tailwindcss";
-body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a0f; color: #e2e8f0; margin: 0; }
-* { box-sizing: border-box; }
+
+@theme {
+  --color-relay-bg: #f5f3f0;
+  --color-relay-surface: #ffffff;
+  --color-relay-border: #e2ded8;
+  --color-relay-hover: #efe9e1;
+  --color-relay-ink: #221f1c;
+  --color-relay-ink-muted: #6b655d;
+  --color-relay-ink-subtle: #948d83;
+  --color-relay-accent: #0d9488;
+  --color-relay-accent-ink: #0f766e;
+  --color-relay-online: #16a34a;
+}
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  /* background: #0a0a0f;
+  color: #e2e8f0; */
+  background: var(--color-relay-bg);
+  color: var(--color-relay-ink);
+  margin: 0;
+}
+* {
+  box-sizing: border-box;
+}
 
 #nprogress .bar {
   background: #ff0055 !important;
 }
 #nprogress .peg {
-  box-shadow: 0 0 10px #ff0055, 0 0 5px #ff0055 !important;
+  box-shadow:
+    0 0 10px #ff0055,
+    0 0 5px #ff0055 !important;
 }
