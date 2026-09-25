@@ -1,0 +1,83 @@
+name: Responsive Convention Check
+
+# Enforces the "Responsive by default" convention from claude_conventions.md:
+# layout files must use Tailwind's sm:/md:/lg: utilities instead of fixed
+# pixel widths, so features like the Sidebar drawer don't regress back to a
+# permanently-visible fixed-width panel.
+
+on:
+  pull_request:
+    paths:
+      - "client/src/**/*.tsx"
+      - "client/src/**/*.jsx"
+
+jobs:
+  check-responsive-classes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed frontend files
+        id: changed-files
+        run: |
+          git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            -- 'client/src/**/*.tsx' 'client/src/**/*.jsx' > changed_files.txt
+          cat changed_files.txt
+
+      - name: Flag fixed pixel width classes on layout containers
+        run: |
+          set -e
+          VIOLATIONS=0
+
+          # Adjust this list as new layout containers are added.
+          LAYOUT_FILES=$(grep -E \
+            '(Sidebar|ChatInterface|Layout|Nav|Drawer|Panel)\.(tsx|jsx)$' \
+            changed_files.txt || true)
+
+          if [ -z "$LAYOUT_FILES" ]; then
+            echo "No layout files changed — skipping."
+            exit 0
+          fi
+
+          for f in $LAYOUT_FILES; do
+            if [ ! -f "$f" ]; then
+              continue # file was deleted
+            fi
+            echo "Checking $f"
+
+            # Flag fixed pixel widths (w-56, w-[240px], width: 240px, etc.)
+            # that have no responsive (sm:/md:/lg:/xl:) variant nearby.
+            MATCHES=$(grep -nE \
+              '\b(w|min-w|max-w)-(\[[0-9]+px\]|[0-9]+)\b|width:\s*[0-9]+px' \
+              "$f" | grep -vE '(sm:|md:|lg:|xl:|2xl:)' || true)
+
+            if [ -n "$MATCHES" ]; then
+              echo "::error file=$f::Fixed pixel width without a responsive breakpoint variant"
+              echo "$MATCHES"
+              VIOLATIONS=1
+            fi
+          done
+
+          if [ "$VIOLATIONS" -eq 1 ]; then
+            echo ""
+            echo "One or more layout files use fixed pixel widths without sm:/md:/lg: variants."
+            echo "See claude_conventions.md — 'Responsive by default'."
+            exit 1
+          fi
+
+      - name: Require responsive utilities on new layout files
+        run: |
+          NEW_LAYOUT_FILES=$(git diff --name-only --diff-filter=A \
+            origin/${{ github.base_ref }}...HEAD \
+            -- 'client/src/**/*.tsx' 'client/src/**/*.jsx' \
+            | grep -E '(Layout|Nav|Sidebar|Drawer|Panel)' || true)
+
+          for f in $NEW_LAYOUT_FILES; do
+            if ! grep -qE '(sm:|md:|lg:)' "$f"; then
+              echo "::error file=$f::New layout file has no sm:/md:/lg: responsive utilities"
+              exit 1
+            fi
+          done

@@ -81,14 +81,14 @@ const EditProfile = () => {
 
   if (isLoading && !currentImage)
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-950">
+      <div className="h-screen flex items-center justify-center bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.18),transparent_65%)]">
         {" "}
         <LoadingSpinner />{" "}
       </div>
     );
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-950 pb-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.18),transparent_65%)] pb-4">
       <div className="w-full max-w-md">
         <button
           onClick={() => navigate("/profile")}

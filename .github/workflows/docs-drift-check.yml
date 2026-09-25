@@ -1,0 +1,51 @@
+name: Conventions Docs Drift Check
+
+# Flags PRs that change the components documented in claude_conventions.md
+# (Sidebar.tsx, ChatInterface.tsx) without touching the doc itself — the
+# same manual-update step that produced the 2026-09-17 entry. This is a
+# soft check: it comments and warns rather than failing the build, since
+# not every change to these files needs a doc update.
+
+on:
+  pull_request:
+    paths:
+      - "client/src/pages/authenticated/Sidebar.tsx"
+      - "client/src/Navigation/ChatInterface.tsx"
+
+permissions:
+  pull-requests: write
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check whether conventions.md was also updated
+        id: check
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          DOC_TOUCHED=$(echo "$CHANGED" | grep -c "claude_conventions.md" || true)
+          echo "doc_touched=$DOC_TOUCHED" >> "$GITHUB_OUTPUT"
+
+      - name: Comment if docs weren't updated
+        if: steps.check.outputs.doc_touched == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                "⚠️ This PR changes `Sidebar.tsx` or `ChatInterface.tsx` but doesn't",
+                "touch `claude_conventions.md`.",
+                "",
+                "If this changes responsive behavior, the drawer/breakpoint logic,",
+                "or the Direct Messages list, please add a dated entry to the",
+                "conventions doc. If not, this comment can be ignored."
+              ].join("\n")
+            });

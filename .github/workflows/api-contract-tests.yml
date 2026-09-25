@@ -1,0 +1,98 @@
+name: Conversations API Contract Tests
+
+# Guards the /api/conversations list + DELETE /api/conversations/:roomId
+# endpoints described in claude_conventions.md, including the "Unknown user"
+# fallback for participants who no longer exist.
+#
+# This workflow assumes a Node/Express-style backend with a seeded Postgres
+# test DB. If the backend is Laravel/PHP instead, swap the "Setup Node" /
+# "Install dependencies" / "Run tests" steps for setup-php + `php artisan test`,
+# and point DATABASE_URL at the Laravel test connection.
+
+on:
+  pull_request:
+    paths:
+      - "server/**"
+      - "api/**"
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: relay_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://test:test@localhost:5432/relay_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run DB migrations
+        run: npm run migrate
+
+      - name: Seed test data (including an orphaned participant)
+        run: npm run seed:test
+
+      - name: Run API contract tests
+        run: npm test -- tests/api/conversations.spec.ts
+
+# --- Example spec this workflow expects at tests/api/conversations.spec.ts ---
+#
+# import request from "supertest";
+# import { app } from "../../server/app";
+#
+# describe("GET /api/conversations", () => {
+#   it("returns 'Unknown user' for a participant that no longer exists", async () => {
+#     const res = await request(app)
+#       .get("/api/conversations")
+#       .set("Authorization", `Bearer ${testUserToken}`);
+#
+#     const orphaned = res.body.find((c) => c.roomId === orphanedRoomId);
+#     expect(orphaned.otherParticipant.displayName).toBe("Unknown user");
+#   });
+# });
+#
+# describe("DELETE /api/conversations/:roomId", () => {
+#   it("removes the conversation from the caller's list", async () => {
+#     await request(app)
+#       .delete(`/api/conversations/${testRoomId}`)
+#       .set("Authorization", `Bearer ${testUserToken}`)
+#       .expect(204);
+#
+#     const res = await request(app)
+#       .get("/api/conversations")
+#       .set("Authorization", `Bearer ${testUserToken}`);
+#
+#     expect(res.body.find((c) => c.roomId === testRoomId)).toBeUndefined();
+#   });
+#
+#   it("404s for a room the caller isn't part of", async () => {
+#     await request(app)
+#       .delete(`/api/conversations/${otherUsersRoomId}`)
+#       .set("Authorization", `Bearer ${testUserToken}`)
+#       .expect(404);
+#   });
+# });

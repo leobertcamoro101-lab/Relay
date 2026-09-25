@@ -70,13 +70,13 @@ function ChatInterface() {
   // Waiting on the auto-connect
   if (status !== "connected" || !currentUser) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-950">
+      <div className="h-screen flex items-center justify-center bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.10),transparent_65%)]">
         <LoadingSpinner />
       </div>
     );
   }
   return (
-    <div className="h-screen flex bg-gray-950 overflow-hidden">
+    <div className="h-screen flex bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.10),transparent_65%)] overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         currentRoom={currentRoom}
