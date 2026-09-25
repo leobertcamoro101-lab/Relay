@@ -29,7 +29,7 @@ function Avatar({ className, style, image, alt, name, width }: AvatarProps) {
         style={style}
       >
         <div
-          className="flex items-center justify-center rounded-full bg-violet-500 text-white font-bold w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24"
+          className="flex items-center justify-center rounded-full bg-relay-accent text-white font-bold w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24"
           style={sizeStyle}
         >
           {getInitials(name)}

@@ -39,32 +39,32 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.18),transparent_65%)]">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-relay-bg">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <p className="text-5xl mb-3">💬</p>
-          <h1 className="text-3xl font-bold text-white mb-2">Forgot password</h1>
-          <p className="text-gray-400 text-sm">
+          <h1 className="text-3xl font-bold text-relay-ink mb-2">Forgot password</h1>
+          <p className="text-relay-ink-subtle text-sm">
             Enter your email and we'll send you a reset link
           </p>
         </div>
         <Link
         to="/relay"
-        className="inline-flex items-center gap-1 text-gray-400 hover:text-white text-sm mb-4"
+        className="inline-flex items-center gap-1 text-relay-ink-subtle hover:text-relay-ink text-sm mb-4"
       >
         <ArrowLeft size={16} /> Back
       </Link>
         <Card>
           {submitted ? (
             <div className="text-center py-2">
-              <p className="text-green-400 text-sm">
+              <p className="text-relay-online text-sm">
                 If that email exists, a reset link has been sent. Check your inbox.
               </p>
             </div>
           ) : (
             <>
               {serverError && (
-                <p className="text-red-400 text-sm text-center mb-4">
+                <p className="text-red-600 text-sm text-center mb-4">
                   {serverError}
                 </p>
               )}
@@ -83,7 +83,7 @@ const ForgotPassword = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-violet-500 hover:bg-violet-400 disabled:opacity-50
+                  className="w-full bg-relay-accent hover:bg-relay-accent-ink disabled:opacity-50
                              text-white font-bold py-3 rounded-xl transition-colors"
                 >
                   {isSubmitting ? "Sending..." : "Send reset link →"}
@@ -92,9 +92,9 @@ const ForgotPassword = () => {
             </>
           )}
 
-          <p className="text-center text-gray-400 text-sm mt-6">
+          <p className="text-center text-relay-ink-subtle text-sm mt-6">
             Remembered your password?{" "}
-            <Link to="/" className="text-violet-400 hover:text-violet-300 font-medium">
+            <Link to="/" className="text-relay-accent hover:text-relay-accent-ink font-medium">
               Login
             </Link>
           </p>

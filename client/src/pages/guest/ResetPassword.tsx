@@ -40,23 +40,23 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.18),transparent_65%)]">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-relay-bg">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <p className="text-5xl mb-3">💬</p>
-          <h1 className="text-3xl font-bold text-white mb-2">Reset password</h1>
-          <p className="text-gray-400 text-sm">Choose a new password for your account</p>
+          <h1 className="text-3xl font-bold text-relay-ink mb-2">Reset password</h1>
+          <p className="text-relay-ink-subtle text-sm">Choose a new password for your account</p>
         </div>
 
         <Card>
           {submitted ? (
             <div className="text-center py-2 space-y-4">
-              <p className="text-green-400 text-sm">
+              <p className="text-relay-online text-sm">
                 Your password has been reset successfully.
               </p>
               <button
                 onClick={() => navigate("/")}
-                className="w-full bg-violet-500 hover:bg-violet-400 text-white
+                className="w-full bg-relay-accent hover:bg-relay-accent-ink text-white
                            font-bold py-3 rounded-xl transition-colors"
               >
                 Go to Login →
@@ -65,7 +65,7 @@ const ResetPassword = () => {
           ) : (
             <>
               {serverError && (
-                <p className="text-red-400 text-sm text-center mb-4">
+                <p className="text-red-600 text-sm text-center mb-4">
                   {serverError}
                 </p>
               )}
@@ -98,7 +98,7 @@ const ResetPassword = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-violet-500 hover:bg-violet-400 disabled:opacity-50
+                  className="w-full bg-relay-accent hover:bg-relay-accent-ink disabled:opacity-50
                              text-white font-bold py-3 rounded-xl transition-colors"
                 >
                   {isSubmitting ? "Resetting..." : "Reset password →"}
@@ -107,8 +107,8 @@ const ResetPassword = () => {
             </>
           )}
 
-          <p className="text-center text-gray-400 text-sm mt-6">
-            <Link to="/" className="text-violet-400 hover:text-violet-300 font-medium">
+          <p className="text-center text-relay-ink-subtle text-sm mt-6">
+            <Link to="/" className="text-relay-accent hover:text-relay-accent-ink font-medium">
               Back to Login
             </Link>
           </p>

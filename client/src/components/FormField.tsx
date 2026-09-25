@@ -22,19 +22,14 @@ const FormField = ({ label, error, hint, children }: FormFieldProps) => {
 
   return (
     <div>
-      <label htmlFor={fieldId} className="text-xs text-gray-400 mb-1 block font-medium">
+      <label htmlFor={fieldId} className="text-xs text-relay-ink-subtle mb-1 block font-medium">
         {label}
       </label>
       {field}
-      {hint && !error && <p className="text-gray-600 text-xs mt-1">{hint}</p>}
-      {error && <p className="text-red-400 text-xs mt-1">⚠️ {error.message}</p>}
+      {hint && !error && <p className="text-relay-ink-subtle text-xs mt-1">{hint}</p>}
+      {error && <p className="text-red-600 text-xs mt-1">⚠️ {error.message}</p>}
     </div>
   );
 };
-
-// export const inputClass = (hasError?: boolean) =>
-//   `w-full bg-gray-900 border ${hasError ? 'border-red-500/50' : 'border-gray-700'}
-//    text-white text-sm rounded-xl px-3 py-2.5 outline-none
-//    focus:border-violet-400 transition-colors placeholder-gray-600`;
 
 export default FormField;

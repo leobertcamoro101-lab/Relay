@@ -55,16 +55,16 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.18),transparent_65%)] pb-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-relay-bg pb-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <p className="text-5xl mb-3">💬</p>
-          <h1 className="text-3xl font-bold text-white mb-2">Signup</h1>
-          <p className="text-gray-400 text-sm">Create your account to get started</p>
+          <h1 className="text-3xl font-bold text-relay-ink mb-2">Signup</h1>
+          <p className="text-relay-ink-subtle text-sm">Create your account to get started</p>
         </div>
         <Card>
           {serverError && (
-            <p className="text-red-400 text-sm text-center mb-4">
+            <p className="text-red-600 text-sm text-center mb-4">
               {serverError}
             </p>
           )}
@@ -137,11 +137,11 @@ const Signup = () => {
           </FormField>
 
           {/* Zod lesson callout */}
-          {/* <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3">
-            <p className="font-mono text-violet-400 text-xs mb-1">
+          {/* <div className="bg-relay-accent/5 border border-relay-accent/20 rounded-xl p-3">
+            <p className="font-mono text-relay-accent-ink text-xs mb-1">
               // Zod concepts in this step:
             </p>
-            <p className="text-gray-400 text-xs font-mono">
+            <p className="text-relay-ink-subtle text-xs font-mono">
               z.string().min().max().transform() • z.number().int().min().max()
               • .optional() • .email()
             </p>
@@ -149,16 +149,16 @@ const Signup = () => {
 
           <button
             type="submit"
-            className="w-full bg-violet-500 hover:bg-violet-400 text-white
+            className="w-full bg-relay-accent hover:bg-relay-accent-ink text-white
                    font-bold py-3 rounded-xl transition-colors"
           >
             Submit
           </button>
         </form>
         
-        <p className="text-center text-gray-400 text-sm mt-6">
+        <p className="text-center text-relay-ink-subtle text-sm mt-6">
             Already have an account?{' '}
-            <Link to="/" className="text-violet-400 hover:text-violet-300 font-medium">
+            <Link to="/" className="text-relay-accent hover:text-relay-accent-ink font-medium">
               Login
             </Link> 
           </p>
