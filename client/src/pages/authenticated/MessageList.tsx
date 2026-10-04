@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMessageEditing } from "../../hooks/useMessageEditing";
+import { useClickOutside } from "../../hooks/useClickOutside";
 import { Pencil, Trash2, Check, X, MoreVertical } from "lucide-react";
 import type { ChatMessage, TypingUser, User } from "../../types";
 
@@ -27,17 +28,7 @@ const MessageList = ({
   const bottomRef = useRef<HTMLDivElement>(null);
   const { editingId, editText, setEditText, startEdit, cancelEdit, saveEdit } = useMessageEditing(onEditMessage);
   const [openMessageId, setOpenMessageId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-      setOpenMessageId(null);
-    }
-  };
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => document.removeEventListener("mousedown", handleClickOutside);
-}, []);
+  const menuRef = useClickOutside(useCallback(() => setOpenMessageId(null), []));
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -37,9 +37,17 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
   }, [text, onSend, onTyping]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // This is a single-line <input>, not a <textarea>, so Shift+Enter has
+    // no newline to insert — it's just a no-op. We still need to
+    // preventDefault() unconditionally on Enter, because a text <input>
+    // inside a <form> submits natively on Enter regardless of shiftKey;
+    // without this, Shift+Enter would silently fall through to that
+    // native submit instead of being suppressed.
+    if (e.key === 'Enter') {
       e.preventDefault();
-      handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
+      if (!e.shiftKey) {
+        handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
+      }
     }
   };
 

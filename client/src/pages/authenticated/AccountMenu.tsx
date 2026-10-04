@@ -1,23 +1,14 @@
 import { Link } from 'react-router-dom';
-import { useContext, useState, useRef, useEffect } from 'react';
+import { useContext, useState, useCallback } from 'react';
 import { AuthContext } from '../../context/auth-context';
 import Avatar from '../../components/Avatar';
 import { ChevronDown, User, LogOut } from 'lucide-react';
+import { useClickOutside } from '../../hooks/useClickOutside';
 
 function AccountMenu() {
 	const auth = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const menuRef = useClickOutside(useCallback(() => setMenuOpen(false), []));
 
   if (!auth.isLoggedIn) return null;
 

@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Trash2, X, MoreVertical } from 'lucide-react';
 import type { User, ConversationSummary } from '../../types';
 import AccountMenu from './AccountMenu';
 import UserSearch from './UserSearch';
+import { useClickOutside } from '../../hooks/useClickOutside';
 
 const ROOMS = ['general', 'tech', 'random'];
 
@@ -39,17 +40,7 @@ const Sidebar = ({
   // Which conversation's "⋮" menu is open, by roomId (or none). One shared
   // piece of state instead of a useState per row — see rules-of-hooks.
   const [openMenuRoomId, setOpenMenuRoomId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuRoomId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const menuRef = useClickOutside(useCallback(() => setOpenMenuRoomId(null), []));
 
   return (
     <>
