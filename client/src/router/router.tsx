@@ -1,18 +1,20 @@
 import {
   createBrowserRouter,
-  Navigate,
+  // Navigate,
   type RouteObject,
 } from "react-router-dom";
 import RootLayout from "../Navigation/RootLayout";
 import RedirectIfAuthenticated from "../Navigation/RedirectIfAuthenticated";
 import RequireAuth from "../Navigation/RequireAuth";
 import { Login, Signup, ChatInterface, Profile, EditProfile, ForgotPassword, ResetPassword, ChangePassword } from "./routes-config";
+import RouteErrorBoundary from "../components/RouteErrorBoundary";
 
 
 const routes: RouteObject[] = [
   {
     path: "/",
     element: <RootLayout />,
+    errorElement: <RouteErrorBoundary/>,
     children: [
       {
         index: true,
@@ -22,6 +24,9 @@ const routes: RouteObject[] = [
           </RedirectIfAuthenticated>
         ),
       },
+      { path: "signup", element: <Signup /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password/:token", element: <ResetPassword /> },
       {
         path: "relay",
         element: (
@@ -30,10 +35,7 @@ const routes: RouteObject[] = [
           </RequireAuth>
         ),
       },
-      { path: "*", element: <Navigate to="/" replace /> },
-      { path: "signup", element: <Signup /> },
-      { path: "forgot-password", element: <ForgotPassword /> },   // NEW
-      { path: "reset-password/:token", element: <ResetPassword /> },   // NEW
+      // { path: "*", element: <Navigate to="/" replace /> }, // commented to take effect RouteError
       {
         path: "profile",
         element: (
