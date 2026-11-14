@@ -5,6 +5,13 @@ export interface User {
   username: string;
 }
 
+export interface MessageAttachment {
+  url: string;
+  name: string;
+  type: string; // MIME type, e.g. "image/png", "video/mp4", "application/pdf"
+  size: number; // bytes
+}
+
 export interface ChatMessage {
   type?: 'MESSAGE' | 'SYSTEM';
   id?: string;
@@ -14,6 +21,7 @@ export interface ChatMessage {
   timestamp?: number;
   isMine?: boolean;
   edited?: boolean;
+  attachment?: MessageAttachment;
 }
 
 export interface TypingUser {

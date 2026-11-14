@@ -13,7 +13,7 @@
 // reusable and React-friendly.
 // ============================================
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { ChatMessage, ConnectionStatus, TypingUser, User } from "../types";
+import type { ChatMessage, ConnectionStatus, MessageAttachment, TypingUser, User } from "../types";
 
 // const WS_URL = "ws://localhost:8080"; // commented because of deploy (change)
 const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080";
@@ -164,9 +164,11 @@ export const useWebSocket = () => {
   // ============================================
   // SEND MESSAGE
   // ============================================
-  const sendMessage = useCallback((text: string) => {
+  // attachment is optional — a plain text message omits it entirely, so the
+  // wire payload shape for existing text-only messages doesn't change.
+  const sendMessage = useCallback((text: string, attachment?: MessageAttachment) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "MESSAGE", text }));
+      wsRef.current.send(JSON.stringify({ type: "MESSAGE", text, attachment }));
     }
   }, []);
 
@@ -187,7 +189,7 @@ export const useWebSocket = () => {
       wsRef.current.send(JSON.stringify({ type: "SWITCH_ROOM", room }));
     }
   }, []);
-  
+
   // ============================================
   // EDIT / DELETE MESSAGE
   // ============================================

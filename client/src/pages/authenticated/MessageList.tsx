@@ -1,14 +1,73 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMessageEditing } from "../../hooks/useMessageEditing";
 import { useClickOutside } from "../../hooks/useClickOutside";
-import { Pencil, Trash2, Check, X, MoreVertical } from "lucide-react";
-import type { ChatMessage, TypingUser, User } from "../../types";
+import { Pencil, Trash2, Check, X, MoreVertical, File as FileIcon, Download } from "lucide-react";
+import type { ChatMessage, MessageAttachment, TypingUser, User } from "../../types";
 
 const formatTime = (timestamp: number) =>
   new Date(timestamp).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// Renders an attachment inside a message bubble: inline preview for images
+// and video, a downloadable file card (icon + name + size) for everything
+// else (pdf, doc, zip, etc).
+function AttachmentPreview({
+  attachment,
+  isMine,
+}: {
+  attachment: MessageAttachment;
+  isMine: boolean;
+}) {
+  if (attachment.type.startsWith("image/")) {
+    return (
+      <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="block">
+        <img
+          src={attachment.url}
+          alt={attachment.name}
+          className="max-h-64 w-full object-cover"
+          loading="lazy"
+        />
+      </a>
+    );
+  }
+
+  if (attachment.type.startsWith("video/")) {
+    return (
+      <video controls className="max-h-64 w-full bg-black">
+        <source src={attachment.url} type={attachment.type} />
+        Your browser can't play this video.
+      </video>
+    );
+  }
+
+  return (
+    <a
+      href={attachment.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`flex items-center gap-2 px-4 py-2.5 hover:underline ${
+        isMine ? "text-white" : "text-relay-ink"
+      }`}
+    >
+      <FileIcon size={20} className="shrink-0" />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">{attachment.name}</span>
+        <span className={`block text-xs ${isMine ? "text-white/70" : "text-relay-ink-subtle"}`}>
+          {formatFileSize(attachment.size)}
+        </span>
+      </span>
+      <Download size={16} className="shrink-0" />
+    </a>
+  );
+}
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -135,13 +194,20 @@ const MessageList = ({
                   </div>
                 ) : (
                   <div
-                    className={`px-4 py-2.5 rounded-2xl text-sm ${
+                    className={`rounded-2xl text-sm overflow-hidden ${
                       isMine
                         ? "bg-relay-accent text-white rounded-tr-sm"
                         : "bg-relay-hover text-relay-ink rounded-tl-sm"
-                    }`}
+                    } ${msg.attachment ? "" : "px-4 py-2.5"}`}
                   >
-                    {msg.text}
+                    {msg.attachment && (
+                      <AttachmentPreview attachment={msg.attachment} isMine={!!isMine} />
+                    )}
+                    {msg.text && (
+                      <p className={`break-words ${msg.attachment ? "px-4 py-2" : ""}`}>
+                        {msg.text}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

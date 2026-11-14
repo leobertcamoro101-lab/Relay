@@ -4,10 +4,11 @@ import helmet from 'helmet';
 import mongoSanitize from "express-mongo-sanitize";
 import logger from "./util/logger.js";
 import * as Sentry from "@sentry/node";
-import { pinoHttp } from "pino-http";   
+import { pinoHttp } from "pino-http";
 
 import usersRoutes from './routes/users-routes.js';
 import conversationsRoutes from './routes/conversations-routes.js';
+import uploadRoutes from './routes/upload-routes.js'; // NEW
 import HttpError from './models/http-error.js';
 
 const app = express();
@@ -55,11 +56,22 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
+  // NEW — a preflight OPTIONS request matches no actual route below (they're
+  // all registered for specific methods), so without this it fell through
+  // to the 404 handler. Browsers require a genuine 2xx on the preflight
+  // itself; a 404 there makes the browser abort the real request as a CORS
+  // failure, which surfaces to JS only as a generic "Failed to fetch" with
+  // no further detail. This affects every Authorization-header request, not
+  // just the new upload route.
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
   next();
 });
 
 app.use('/api/users', usersRoutes);
 app.use('/api/conversations', conversationsRoutes);   // NEW
+app.use('/api/upload', uploadRoutes);   // NEW
 
 // for Sentry testing only
 // app.get("/debug-sentry", () => {

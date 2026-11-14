@@ -19,7 +19,7 @@ import http from "node:http";
 import { randomUUID } from "node:crypto";
 import { WebSocketServer, WebSocket } from "ws";
 // import express from "express";
-import type { ClientMessage, ServerMessage } from "./types.js";
+import type { ClientMessage, ServerMessage, Attachment } from "./types.js";
 import Message, { getRecentMessages } from "./models/messages.js";
 import {
   type ClientState,
@@ -59,6 +59,29 @@ function getClientIp(request: http.IncomingMessage): string {
 const MAX_CONNECTIONS_PER_IP = 20; // raise if you want to raise the limit
 const connectionsByIp = new Map<string, number>();
 
+// NEW — validates the shape of an attachment the client claims to be
+// sending with a MESSAGE. This does NOT verify the url actually came from
+// our own POST /api/upload — a client could in principle send any external
+// URL here, the same way they already could by pasting a link as plain
+// text. What this guards against is a malformed/oversized payload corrupting
+// the DB write or rendering strangely in the UI, not a client lying about
+// where a file is hosted.
+function sanitizeAttachment(attachment: unknown): Attachment | undefined {
+  if (!attachment || typeof attachment !== "object") return undefined;
+  const { url, name, type, size } = attachment as Record<string, unknown>;
+
+  if (
+    typeof url !== "string" || url.length === 0 || url.length > 2000 ||
+    typeof name !== "string" || name.length === 0 ||
+    typeof type !== "string" || type.length === 0 || type.length > 100 ||
+    typeof size !== "number" || !Number.isFinite(size) || size < 0
+  ) {
+    return undefined;
+  }
+
+  return { url, name: name.slice(0, 255), type, size };
+}
+
 function send(ws: WebSocket, message: ServerMessage): void {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(message));
@@ -86,6 +109,12 @@ const server = http.createServer(app);
 // a 500-char chat message needs, well short of the library's 100MB
 // default, which would otherwise let one client burn CPU/memory parsing
 // giant frames.
+//
+// NOTE: this is unrelated to file size — attachments go over the separate
+// REST upload endpoint (POST /api/upload) as multipart form data, never
+// through this WebSocket connection. A MESSAGE frame only ever carries an
+// attachment's url/name/type/size (a few hundred bytes at most), not the
+// file's actual bytes, so 64KB stays plenty even with attachments.
 const wss = new WebSocketServer({ server, maxPayload: 64 * 1024 });
 
 wss.on("error", (err) => {
@@ -219,8 +248,11 @@ wss.on("connection", (ws: WebSocket, request) => {
 
       case "MESSAGE": {
         if (!client) return;
-        const text = data.text?.trim().slice(0, 500);
-        if (!text) return;
+        const text = data.text?.trim().slice(0, 500) ?? "";
+        // NEW — a message can now be an attachment with no caption at all,
+        // so the old "!text -> return" guard would silently drop those.
+        const attachment = sanitizeAttachment(data.attachment);
+        if (!text && !attachment) return; // genuinely nothing to send
 
         let saved;
         try {
@@ -229,6 +261,7 @@ wss.on("connection", (ws: WebSocket, request) => {
             userId: client.userId,
             username: client.username,
             text,
+            attachment, // NEW
           });
         } catch {
           return; // don't broadcast something that failed to save
@@ -241,6 +274,7 @@ wss.on("connection", (ws: WebSocket, request) => {
           username: client.username,
           text,
           timestamp: saved.createdAt.getTime(), // was: Date.now() — same reasoning, use the persisted time
+          attachment: saved.attachment, // NEW
         });
         break;
       }

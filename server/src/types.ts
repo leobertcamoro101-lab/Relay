@@ -3,6 +3,18 @@ export interface User {
   username: string;
 }
 
+// NEW — a file attached to a chat message. Produced by POST /api/upload
+// (see routes/upload-routes.ts), which stores the file in Cloudinary and
+// hands back its url; name/type/size are supplied by the client from the
+// File object it already has, then re-validated for shape (not origin —
+// see the note in index.ts's MESSAGE handler) before being persisted.
+export interface Attachment {
+  url: string;
+  name: string;
+  type: string;
+  size: number;
+}
+
 // ---- Messages the client sends to the server ----
 
 export interface JoinMessage {
@@ -15,6 +27,7 @@ export interface JoinMessage {
 export interface ChatMessageIn {
   type: 'MESSAGE';
   text: string;
+  attachment?: Attachment; // NEW
 }
 
 export interface TypingMessageIn {
@@ -66,6 +79,7 @@ export interface ChatMessageOut {
   text: string;
   timestamp: number;
   edited?: boolean;   // NEW
+  attachment?: Attachment; // NEW
 }
 
 export interface UserJoinedMessage {
