@@ -18,7 +18,11 @@ describe("Submitting a message", () => {
 
     await user.type(input, "  hello there  {Enter}");
 
-    expect(onSend).toHaveBeenCalledWith("hello there");
+    // MessageInput now always calls onSend(text, attachment) — attachment
+    // is undefined here since no file was selected. Covered in more depth
+    // by MessageInput-attachments.test.tsx; this file just needs to match
+    // the real two-argument contract instead of the old text-only one.
+    expect(onSend).toHaveBeenCalledWith("hello there", undefined);
     expect(input).toHaveValue("");
   });
 
@@ -56,7 +60,7 @@ describe("Submitting a message", () => {
     expect(button).not.toBeDisabled();
 
     await user.click(button);
-    expect(onSend).toHaveBeenCalledWith("via button");
+    expect(onSend).toHaveBeenCalledWith("via button", undefined);
     expect(input).toHaveValue("");
   });
 });
