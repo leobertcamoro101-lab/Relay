@@ -64,7 +64,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // no further detail. This affects every Authorization-header request, not
   // just the new upload route.
   if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
+    res.sendStatus(204);
+    return;
   }
   next();
 });
