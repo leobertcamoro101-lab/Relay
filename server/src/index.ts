@@ -31,6 +31,7 @@ import {
   canJoinRoom,   // NEW
 } from "./state.js";
 import { connectDB } from "./db.js";
+import { deleteAttachmentFile } from "./util/attachment-cleanup.js";
 import app from "./app.js";
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -389,6 +390,13 @@ wss.on("connection", (ws: WebSocket, request) => {
         }
         if (!updated) return;
 
+        // The previous file is orphaned if it was removed or replaced. Done
+        // after the DB update + broadcast data is ready, and not awaited, so
+        // a slow/failed Cloudinary call never delays or breaks the edit.
+        if ((removing || replacement) && existing.attachment?.url !== updated.attachment?.url) {
+          void deleteAttachmentFile(existing.attachment?.url);
+        }
+
         broadcast(client.room, {
           type: "MESSAGE_EDITED",
           id: String(updated._id),
@@ -412,6 +420,8 @@ wss.on("connection", (ws: WebSocket, request) => {
           return;
         }
         if (!deleted) return;
+
+        void deleteAttachmentFile(deleted.attachment?.url); // message gone -> its file is orphaned
 
         broadcast(client.room, {
           type: "MESSAGE_DELETED",
