@@ -289,14 +289,6 @@ const MessageList = ({
                         </button>
                       </div>
                     )}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept={ACCEPTED_FILE_TYPES}
-                      onChange={handleReplacePick}
-                      className="hidden"
-                      aria-label="Choose a replacement file"
-                    />
                     <div className="flex items-center gap-1">
                       <input
                         autoFocus
@@ -389,6 +381,17 @@ const MessageList = ({
         </div>
       )}
 
+      {/* One shared hidden picker for "replace file" while editing. Kept outside
+          the per-message div.group so each bubble has a single <input> (the
+          edit field) — e2e selectors like `div.group input` rely on that. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ACCEPTED_FILE_TYPES}
+        onChange={handleReplacePick}
+        className="hidden"
+        aria-label="Choose a replacement file"
+      />
       <div ref={bottomRef} />
     </div>
   );
