@@ -343,27 +343,57 @@ wss.on("connection", (ws: WebSocket, request) => {
         );
         break;
       }
-            case "EDIT_MESSAGE": {
+      case "EDIT_MESSAGE": {
         if (!client) return;
-        const text = data.text?.trim().slice(0, 500);
-        if (!text || !data.id || !mongoose.isValidObjectId(data.id)) return;
+        if (!data.id || !mongoose.isValidObjectId(data.id)) return;
+        const text = (data.text ?? "").trim().slice(0, 500);
+
+        // undefined -> keep, null -> remove, object -> replace (must be valid)
+        const rawAttachment = data.attachment;
+        const replacement =
+          rawAttachment && typeof rawAttachment === "object"
+            ? sanitizeAttachment(rawAttachment)
+            : undefined;
+        if (rawAttachment && typeof rawAttachment === "object" && !replacement) return; // malformed
+        const removing = rawAttachment === null;
+
+        let existing;
+        try {
+          // ownership check — only the sender can edit
+          existing = await Message.findOne({ _id: data.id, userId: client.userId });
+        } catch {
+          return;
+        }
+        if (!existing) return; // not found, or not the owner — silently ignore
+
+        // A message must still have text OR an attachment after the edit.
+        const willHaveAttachment = removing ? false : !!(replacement ?? existing.attachment);
+        if (!text && !willHaveAttachment) return;
+
+        const update: Record<string, unknown> = { $set: { text, edited: true } };
+        if (replacement) {
+          (update.$set as Record<string, unknown>).attachment = replacement;
+        } else if (removing) {
+          update.$unset = { attachment: 1 };
+        }
 
         let updated;
         try {
           updated = await Message.findOneAndUpdate(
-            { _id: data.id, userId: client.userId }, // ownership check — only the sender can edit
-            { text, edited: true },
+            { _id: data.id, userId: client.userId },
+            update,
             { returnDocument: "after" },
           );
         } catch {
           return;
         }
-        if (!updated) return; // not found, or not the owner — silently ignore
+        if (!updated) return;
 
         broadcast(client.room, {
           type: "MESSAGE_EDITED",
           id: String(updated._id),
           text: updated.text,
+          attachment: updated.attachment ?? null,
         });
         break;
       }

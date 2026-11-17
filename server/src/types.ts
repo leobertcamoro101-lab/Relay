@@ -44,6 +44,9 @@ export interface EditMessageIn {
   type: 'EDIT_MESSAGE';
   id: string;
   text: string;
+  // undefined = leave the attachment alone, null = remove it,
+  // object = replace it with a newly uploaded file.
+  attachment?: Attachment | null;
 }
 
 export interface DeleteMessageIn {
@@ -118,6 +121,7 @@ export interface MessageEditedMessage {
   type: 'MESSAGE_EDITED';
   id: string;
   text: string;
+  attachment: Attachment | null; // the attachment after the edit (null = none)
 }
 
 export interface MessageDeletedMessage {

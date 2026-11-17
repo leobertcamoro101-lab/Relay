@@ -134,9 +134,15 @@ export const useWebSocket = () => {
 
       case "MESSAGE_EDITED":
         setMessages((prev) =>
-          prev.map((m) =>
-            m.id === data.id ? { ...m, text: data.text as string, edited: true } : m
-          )
+          prev.map((m) => {
+            if (m.id !== data.id) return m;
+            const next = { ...m, text: data.text as string, edited: true };
+            // Server always sends the post-edit attachment (null = removed).
+            if ("attachment" in data) {
+              next.attachment = (data.attachment as MessageAttachment | null) ?? undefined;
+            }
+            return next;
+          })
         );
         break;
 
@@ -193,9 +199,18 @@ export const useWebSocket = () => {
   // ============================================
   // EDIT / DELETE MESSAGE
   // ============================================
-  const editMessage = useCallback((id: string, text: string) => {
+  // attachment: undefined = leave as is, null = remove, object = replace.
+  const editMessage = useCallback(
+    (id: string, text: string, attachment?: MessageAttachment | null) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "EDIT_MESSAGE", id, text }));
+      wsRef.current.send(
+        JSON.stringify({
+          type: "EDIT_MESSAGE",
+          id,
+          text,
+          ...(attachment !== undefined ? { attachment } : {}),
+        })
+      );
     }
   }, []);
 
