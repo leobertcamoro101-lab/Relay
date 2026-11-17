@@ -33,3 +33,9 @@ npx tsc --noEmit
 
 # required: true, 
 # // default: "https://ui-avatars.com/api/?name=User&background=random"  // ← just adds a fallback
+# to delete orphaned attachments, run the following command in the server directory:
+cd server
+# dry run to see which attachments would be deleted
+npx tsx scripts/cleanup-orphaned-attachments.ts
+# add the --delete flag to actually delete the orphaned attachments
+npx tsx scripts/cleanup-orphaned-attachments.ts --delete
