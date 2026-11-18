@@ -50,21 +50,21 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-950 bg-[radial-gradient(ellipse_70%_45%_at_50%_-10%,rgba(139,92,246,0.18),transparent_65%)] pb-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-relay-bg pb-4">
       <div className="w-full max-w-md">
         <button
           onClick={() => navigate("/profile")}
-          className="inline-flex items-center gap-1 text-gray-400 hover:text-white text-sm mb-2"
+          className="inline-flex items-center gap-1 text-relay-ink-subtle hover:text-relay-ink text-sm mb-2 transition-colors"
         >
           <ArrowLeft size={16} /> Back
         </button>
         <Card>
           {submitted ? (
             <div className="text-center py-2 space-y-4">
-              <p className="text-green-400 text-sm">Password updated successfully.</p>
+              <p className="text-relay-online text-sm font-medium">Password updated successfully.</p>
               <button
                 onClick={() => navigate("/profile")}
-                className="w-full bg-violet-500 hover:bg-violet-400 text-white
+                className="w-full bg-relay-accent hover:bg-relay-accent-ink text-white
                            font-bold py-3 rounded-xl transition-colors"
               >
                 Back to Profile →
@@ -73,7 +73,7 @@ const ChangePassword = () => {
           ) : (
             <>
               {serverError && (
-                <p className="text-red-400 text-sm text-center mb-4">{serverError}</p>
+                <p className="text-red-600 text-sm text-center mb-4">{serverError}</p>
               )}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <FormField label="Current password" error={errors.currentPassword}>
@@ -114,7 +114,7 @@ const ChangePassword = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-violet-500 hover:bg-violet-400 disabled:opacity-50
+                  className="w-full bg-relay-accent hover:bg-relay-accent-ink disabled:opacity-50
                              text-white font-bold py-3 rounded-xl transition-colors"
                 >
                   {isSubmitting ? "Updating..." : "Update password →"}
