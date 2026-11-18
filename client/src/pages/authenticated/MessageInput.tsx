@@ -2,25 +2,13 @@ import { useState, useRef, useCallback, useContext, useEffect } from 'react';
 import { Paperclip, File as FileIcon, X } from 'lucide-react';
 import { AuthContext } from '../../context/auth-context';
 import { useHttpClient } from '../../hooks/useHttpClient';
+import FilePicker from '../../components/FilePicker';
+import { ATTACHMENT_ACCEPT, MAX_ATTACHMENT_BYTES, formatFileSize } from '../../utils/attachments';
 import type { MessageAttachment } from '../../types';
 
 interface MessageInputProps {
   onSend: (text: string, attachment?: MessageAttachment) => void;
   onTyping: (isTyping: boolean) => void;
-}
-
-// Keep this in sync with whatever the backend's upload route actually
-// enforces — this is a client-side convenience check, not the source of
-// truth. 25MB covers most images/documents/short clips without needing
-// chunked upload.
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
-const ACCEPTED_FILE_TYPES =
-  'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip';
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
@@ -30,7 +18,6 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
 
   const auth = useContext(AuthContext);
   const { sendRequest } = useHttpClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -57,22 +44,15 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
     setFileError(null);
   }, []);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    e.target.value = ''; // allow picking the same file again after removing it
-    if (!selected) return;
-
-    setFileError(null);
-    if (selected.size > MAX_FILE_SIZE_BYTES) {
-      setFileError(
-        `"${selected.name}" is larger than ${formatFileSize(MAX_FILE_SIZE_BYTES)}.`
-      );
+  const handlePick = (picked: File | null, error: string) => {
+    if (!picked) {
+      setFileError(error); // keep any existing selection
       return;
     }
-
-    setFile(selected);
+    setFileError(null);
+    setFile(picked);
     setFilePreviewUrl(
-      selected.type.startsWith('image/') ? URL.createObjectURL(selected) : null
+      picked.type.startsWith('image/') ? URL.createObjectURL(picked) : null
     );
   };
 
@@ -195,24 +175,16 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
       )}
 
       <div className="flex gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ACCEPTED_FILE_TYPES}
-          onChange={handleFileSelect}
-          className="hidden"
-          aria-label="Choose a file to attach"
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
+        <FilePicker
+          accept={ATTACHMENT_ACCEPT}
+          maxBytes={MAX_ATTACHMENT_BYTES}
+          label="Choose a file to attach"
           title="Attach a file"
-          aria-label="Attach a file"
-          className="shrink-0 text-relay-ink-subtle hover:text-relay-ink disabled:opacity-50 transition-colors"
-        >
-          <Paperclip size={20} />
-        </button>
+          icon={Paperclip}
+          disabled={isUploading}
+          onPick={handlePick}
+          className="shrink-0 text-relay-ink-subtle hover:text-relay-ink transition-colors"
+        />
 
         <input
           id="message-text"

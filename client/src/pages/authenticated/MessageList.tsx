@@ -3,11 +3,8 @@ import { useMessageEditing } from "../../hooks/useMessageEditing";
 import { useClickOutside } from "../../hooks/useClickOutside";
 import { Pencil, Trash2, Check, X, MoreVertical, File as FileIcon, Download, Paperclip } from "lucide-react";
 import { useFileUpload } from "../../hooks/useFileUpload";
+import { ATTACHMENT_ACCEPT, formatFileSize, validateFile } from "../../utils/attachments";
 import type { ChatMessage, MessageAttachment, TypingUser, User } from "../../types";
-
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
-const ACCEPTED_FILE_TYPES =
-  "image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip";
 
 // What the user has chosen to do with the attachment while editing.
 type AttachmentDraft =
@@ -20,12 +17,6 @@ const formatTime = (timestamp: number) =>
     hour: "2-digit",
     minute: "2-digit",
   });
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 // Renders an attachment inside a message bubble: inline preview for images
 // and video, a downloadable file card (icon + name + size) for everything
@@ -121,8 +112,9 @@ const MessageList = ({
     const selected = e.target.files?.[0];
     e.target.value = "";
     if (!selected) return;
-    if (selected.size > MAX_FILE_SIZE_BYTES) {
-      setEditError(`"${selected.name}" is larger than ${formatFileSize(MAX_FILE_SIZE_BYTES)}.`);
+    const error = validateFile(selected);
+    if (error) {
+      setEditError(error);
       return;
     }
     setEditError(null);
@@ -387,7 +379,7 @@ const MessageList = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept={ACCEPTED_FILE_TYPES}
+        accept={ATTACHMENT_ACCEPT}
         onChange={handleReplacePick}
         className="hidden"
         aria-label="Choose a replacement file"

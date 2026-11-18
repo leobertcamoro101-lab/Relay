@@ -110,7 +110,6 @@ const signup = async (req: AuthRequest, res: Response, next: NextFunction) => {
     await createdUser.save();
   } catch (err) {
     
-    // console.log(err);
     logger.error({ err }, "signup failed");
     return next(new HttpError("Signing up failed, please try again.", 500));
   }
@@ -123,7 +122,6 @@ const signup = async (req: AuthRequest, res: Response, next: NextFunction) => {
       { expiresIn: "1h" }
     );
   } catch (err) {
-    // console.log(err);
     logger.error({ err }, "signup failed");
     return next(new HttpError("Signing up failed, please try again.", 500));
   }
