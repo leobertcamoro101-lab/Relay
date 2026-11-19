@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMessageEditing } from "../../hooks/useMessageEditing";
 import { useClickOutside } from "../../hooks/useClickOutside";
-import { Pencil, Trash2, Check, X, MoreVertical, File as FileIcon, Download, Paperclip } from "lucide-react";
+import { Pencil, Trash2, Check, X, MoreVertical, File as FileIcon, Paperclip } from "lucide-react";
 import { useFileUpload } from "../../hooks/useFileUpload";
-import { ATTACHMENT_ACCEPT, formatFileSize, validateFile } from "../../utils/attachments";
+import { ATTACHMENT_ACCEPT, validateFile } from "../../utils/attachments";
+import AttachmentPreview from "./AttachmentPreview";
+import TypingIndicator from "./TypingIndicator";
 import type { ChatMessage, MessageAttachment, TypingUser, User } from "../../types";
 
 // What the user has chosen to do with the attachment while editing.
@@ -17,59 +19,6 @@ const formatTime = (timestamp: number) =>
     hour: "2-digit",
     minute: "2-digit",
   });
-
-// Renders an attachment inside a message bubble: inline preview for images
-// and video, a downloadable file card (icon + name + size) for everything
-// else (pdf, doc, zip, etc).
-function AttachmentPreview({
-  attachment,
-  isMine,
-}: {
-  attachment: MessageAttachment;
-  isMine: boolean;
-}) {
-  if (attachment.type.startsWith("image/")) {
-    return (
-      <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="block">
-        <img
-          src={attachment.url}
-          alt={attachment.name}
-          className="max-h-64 w-full object-cover"
-          loading="lazy"
-        />
-      </a>
-    );
-  }
-
-  if (attachment.type.startsWith("video/")) {
-    return (
-      <video controls className="max-h-64 w-full bg-black">
-        <source src={attachment.url} type={attachment.type} />
-        Your browser can't play this video.
-      </video>
-    );
-  }
-
-  return (
-    <a
-      href={attachment.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`flex items-center gap-2 px-4 py-2.5 hover:underline ${
-        isMine ? "text-white" : "text-relay-ink"
-      }`}
-    >
-      <FileIcon size={20} className="shrink-0" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{attachment.name}</span>
-        <span className={`block text-xs ${isMine ? "text-white/70" : "text-relay-ink-subtle"}`}>
-          {formatFileSize(attachment.size)}
-        </span>
-      </span>
-      <Download size={16} className="shrink-0" />
-    </a>
-  );
-}
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -347,31 +296,7 @@ const MessageList = ({
         );
       })}
 
-      {typingUsers.length > 0 && (
-        <div className="flex justify-start">
-          <div className="bg-relay-hover rounded-2xl rounded-tl-sm px-4 py-2.5">
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1">
-                <span
-                  className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce"
-                  style={{ animationDelay: "0ms" }}
-                />
-                <span
-                  className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce"
-                  style={{ animationDelay: "150ms" }}
-                />
-                <span
-                  className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce"
-                  style={{ animationDelay: "300ms" }}
-                />
-              </div>
-              <span className="text-relay-ink-subtle text-xs">
-                {typingUsers.map((u) => u.username).join(", ")} typing...
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      <TypingIndicator typingUsers={typingUsers} />
 
       {/* One shared hidden picker for "replace file" while editing. Kept outside
           the per-message div.group so each bubble has a single <input> (the
