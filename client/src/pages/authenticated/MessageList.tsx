@@ -1,18 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMessageEditing } from "../../hooks/useMessageEditing";
 import { useClickOutside } from "../../hooks/useClickOutside";
-import { Pencil, Trash2, Check, X, MoreVertical, File as FileIcon, Paperclip } from "lucide-react";
-import { useFileUpload } from "../../hooks/useFileUpload";
-import { ATTACHMENT_ACCEPT, validateFile } from "../../utils/attachments";
+import { Pencil, Trash2, MoreVertical } from "lucide-react";
+import { useAttachmentEditing } from "../../hooks/useAttachmentEditing";
+import { ATTACHMENT_ACCEPT } from "../../utils/attachments";
+import MessageEditPanel from "./MessageEditPanel";
 import AttachmentPreview from "./AttachmentPreview";
 import TypingIndicator from "./TypingIndicator";
 import type { ChatMessage, MessageAttachment, TypingUser, User } from "../../types";
-
-// What the user has chosen to do with the attachment while editing.
-type AttachmentDraft =
-  | { mode: "keep" }
-  | { mode: "remove" }
-  | { mode: "replace"; file: File };
 
 const formatTime = (timestamp: number) =>
   new Date(timestamp).toLocaleTimeString([], {
@@ -37,76 +32,19 @@ const MessageList = ({
 }: MessageListProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { editingId, editText, setEditText, startEdit, cancelEdit: cancelTextEdit } = useMessageEditing(onEditMessage);
-  const { uploadFile } = useFileUpload();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [attachmentDraft, setAttachmentDraft] = useState<AttachmentDraft>({ mode: "keep" });
-  const [isSaving, setIsSaving] = useState(false);
-  const [editError, setEditError] = useState<string | null>(null);
-
-  const resetDraft = () => {
-    setAttachmentDraft({ mode: "keep" });
-    setEditError(null);
-    setIsSaving(false);
-  };
-  const cancelEdit = () => {
-    cancelTextEdit();
-    resetDraft();
-  };
-  const beginEdit = (msg: ChatMessage) => {
-    resetDraft();
-    startEdit(msg);
-  };
-
-  const handleReplacePick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    e.target.value = "";
-    if (!selected) return;
-    const error = validateFile(selected);
-    if (error) {
-      setEditError(error);
-      return;
-    }
-    setEditError(null);
-    setAttachmentDraft({ mode: "replace", file: selected });
-  };
-
-  // Saves text + attachment changes. Done here (not in useMessageEditing) so
-  // it can upload a replacement file first and allow empty text when an
-  // attachment remains.
-  const saveEdit = async (msg: ChatMessage) => {
-    if (!msg.id || isSaving) return;
-    const text = editText.trim();
-    const keepsAttachment =
-      attachmentDraft.mode === "replace" ||
-      (attachmentDraft.mode === "keep" && !!msg.attachment);
-    if (!text && !keepsAttachment) return; // would leave an empty message
-
-    let attachment: MessageAttachment | null | undefined; // undefined = unchanged
-    if (attachmentDraft.mode === "remove") {
-      attachment = msg.attachment ? null : undefined;
-    } else if (attachmentDraft.mode === "replace") {
-      setIsSaving(true);
-      setEditError(null);
-      try {
-        attachment = await uploadFile(attachmentDraft.file);
-      } catch (err) {
-        setIsSaving(false);
-        setEditError(err instanceof Error ? err.message : "Upload failed. Try again.");
-        return; // stay in edit mode so the user can retry
-      }
-    }
-
-    const textChanged = text !== (msg.text ?? "");
-    if (!textChanged && attachment === undefined) {
-      cancelEdit(); // nothing actually changed
-      return;
-    }
-    // Omit the third argument entirely when the attachment is untouched, so a
-    // plain text edit calls onEditMessage(id, text) exactly as before.
-    if (attachment === undefined) onEditMessage(msg.id, text);
-    else onEditMessage(msg.id, text, attachment);
-    cancelEdit();
-  };
+  const {
+    attachmentDraft,
+    isSaving,
+    editError,
+    fileInputRef,
+    beginEdit,
+    cancelEdit,
+    saveEdit,
+    openFilePicker,
+    markRemoved,
+    undoRemove,
+    handleReplacePick,
+  } = useAttachmentEditing({ editText, onEditMessage, startEdit, cancelTextEdit });
   const [openMessageId, setOpenMessageId] = useState<string | null>(null);
   const menuRef = useClickOutside(useCallback(() => setOpenMessageId(null), []));
 
@@ -187,86 +125,19 @@ const MessageList = ({
                 )}
 
                 {isEditing ? (
-                  <div className="flex flex-col gap-2 rounded-xl border border-relay-accent bg-relay-surface p-2">
-                    {attachmentDraft.mode !== "remove" && (msg.attachment || attachmentDraft.mode === "replace") && (
-                      <div className="flex items-center gap-2 rounded-lg bg-relay-hover px-2 py-1.5">
-                        <FileIcon size={16} className="shrink-0 text-relay-ink-subtle" />
-                        <span className="min-w-0 flex-1 truncate text-xs text-relay-ink">
-                          {attachmentDraft.mode === "replace"
-                            ? attachmentDraft.file.name
-                            : msg.attachment!.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isSaving}
-                          title="Replace file"
-                          aria-label="Replace file"
-                          className="text-relay-ink-subtle hover:text-relay-ink disabled:opacity-50"
-                        >
-                          <Paperclip className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setAttachmentDraft({ mode: "remove" })}
-                          disabled={isSaving}
-                          title="Remove file"
-                          aria-label="Remove file"
-                          className="text-relay-ink-subtle hover:text-red-600 disabled:opacity-50"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                    {attachmentDraft.mode === "remove" && msg.attachment && (
-                      <div className="flex items-center justify-between rounded-lg bg-relay-hover px-2 py-1.5 text-xs text-relay-ink-subtle">
-                        <span>File will be removed</span>
-                        <button
-                          type="button"
-                          onClick={() => setAttachmentDraft({ mode: "keep" })}
-                          className="text-relay-accent hover:underline"
-                        >
-                          Undo
-                        </button>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <input
-                        autoFocus
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveEdit(msg);
-                          if (e.key === "Escape") cancelEdit();
-                        }}
-                        placeholder={msg.attachment ? "Caption (optional)" : undefined}
-                        maxLength={500}
-                        className="px-3 py-1.5 rounded-xl text-sm bg-relay-surface text-relay-ink border border-relay-border focus:outline-none focus:border-relay-accent"
-                      />
-                      <button
-                        onClick={() => saveEdit(msg)}
-                        disabled={isSaving}
-                        title="Save"
-                        className="text-relay-online hover:text-relay-online/80 disabled:opacity-50"
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        disabled={isSaving}
-                        title="Cancel"
-                        className="text-relay-ink-subtle hover:text-relay-ink disabled:opacity-50"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    {isSaving && <p className="text-xs text-relay-ink-subtle">Uploading...</p>}
-                    {editError && (
-                      <p className="text-xs text-red-600" role="alert">
-                        {editError}
-                      </p>
-                    )}
-                  </div>
+                  <MessageEditPanel
+                    message={msg}
+                    draft={attachmentDraft}
+                    editText={editText}
+                    isSaving={isSaving}
+                    error={editError}
+                    onTextChange={setEditText}
+                    onSave={() => saveEdit(msg)}
+                    onCancel={cancelEdit}
+                    onReplaceFile={openFilePicker}
+                    onRemoveFile={markRemoved}
+                    onUndoRemove={undoRemove}
+                  />
                 ) : (
                   <div
                     className={`rounded-2xl text-sm overflow-hidden ${
