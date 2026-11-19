@@ -27,6 +27,7 @@ interface ServerMessage {
     | "TYPING"
     | "ROOM_SWITCHED"
     | "MESSAGE_EDITED"   // NEW
+    | "REACTIONS_UPDATED"
     | "MESSAGE_DELETED"; // NEW;
   userId?: string;
   username?: string;
@@ -146,6 +147,16 @@ export const useWebSocket = () => {
         );
         break;
 
+      case "REACTIONS_UPDATED":
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === data.id
+              ? { ...m, reactions: (data.reactions as Record<string, string[]>) ?? {} }
+              : m
+          )
+        );
+        break;
+
       case "MESSAGE_DELETED":
         setMessages((prev) => prev.filter((m) => m.id !== data.id));
         break;
@@ -214,6 +225,12 @@ export const useWebSocket = () => {
     }
   }, []);
 
+  const toggleReaction = useCallback((id: string, emoji: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "TOGGLE_REACTION", id, emoji }));
+    }
+  }, []);
+
   const deleteMessage = useCallback((id: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "DELETE_MESSAGE", id }));
@@ -242,5 +259,6 @@ export const useWebSocket = () => {
     authError,
     editMessage,     // NEW
     deleteMessage,   // NEW
+    toggleReaction,
   };
 };

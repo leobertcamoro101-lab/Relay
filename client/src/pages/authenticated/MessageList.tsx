@@ -5,6 +5,8 @@ import { Pencil, Trash2, MoreVertical } from "lucide-react";
 import { useAttachmentEditing } from "../../hooks/useAttachmentEditing";
 import { ATTACHMENT_ACCEPT } from "../../utils/attachments";
 import MessageEditPanel from "./MessageEditPanel";
+import ReactionPicker from "./ReactionPicker";
+import ReactionBar from "./ReactionBar";
 import AttachmentPreview from "./AttachmentPreview";
 import TypingIndicator from "./TypingIndicator";
 import type { ChatMessage, MessageAttachment, TypingUser, User } from "../../types";
@@ -21,6 +23,7 @@ interface MessageListProps {
   typingUsers: TypingUser[];
   onEditMessage: (id: string, text: string, attachment?: MessageAttachment | null) => void;
   onDeleteMessage: (id: string) => void;
+  onToggleReaction?: (id: string, emoji: string) => void; // omit to hide reactions
 }
 
 const MessageList = ({
@@ -29,6 +32,7 @@ const MessageList = ({
   typingUsers,
   onEditMessage,
   onDeleteMessage,
+  onToggleReaction,
 }: MessageListProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { editingId, editText, setEditText, startEdit, cancelEdit: cancelTextEdit } = useMessageEditing(onEditMessage);
@@ -93,6 +97,9 @@ const MessageList = ({
               <div className="flex items-center gap-1">
                 {isMine && !isEditing && msg.id && (
                   <div className="hidden group-hover:flex items-center gap-1">
+                    {onToggleReaction && (
+                      <ReactionPicker onPick={(emoji) => onToggleReaction(msg.id!, emoji)} />
+                    )}
                     <div className="relative" ref={isMenuOpen ? menuRef : undefined}>
                       <button
                         onClick={() => setOpenMessageId(isMenuOpen ? null : msg.id!)}
@@ -156,7 +163,19 @@ const MessageList = ({
                     )}
                   </div>
                 )}
+
+                {!isMine && msg.id && onToggleReaction && (
+                  <div className="hidden group-hover:flex items-center">
+                    <ReactionPicker onPick={(emoji) => onToggleReaction(msg.id!, emoji)} />
+                  </div>
+                )}
               </div>
+
+              <ReactionBar
+                reactions={msg.reactions}
+                currentUserId={currentUser?.id}
+                onToggle={onToggleReaction && msg.id ? (emoji) => onToggleReaction(msg.id!, emoji) : undefined}
+              />
 
               <span className="text-xs text-relay-ink-subtle mt-1 mx-1">
                 {msg.timestamp ? formatTime(msg.timestamp) : ""}

@@ -40,6 +40,7 @@ function ChatInterface() {
     authError,
     editMessage,     // NEW
     deleteMessage,   // NEW
+    toggleReaction,
   } = useWebSocket();
 
   const {
@@ -156,6 +157,7 @@ function ChatInterface() {
           typingUsers={typingUsers}
           onEditMessage={editMessage}     // NEW
           onDeleteMessage={deleteMessage} // NEW
+          onToggleReaction={toggleReaction}
         />
 
         {/* Input */}

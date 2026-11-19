@@ -32,6 +32,7 @@ import {
 } from "./state.js";
 import { connectDB } from "./db.js";
 import { deleteAttachmentFile } from "./util/attachment-cleanup.js";
+import { isAllowedReaction, normalizeReactions } from "./util/reactions.js";
 import app from "./app.js";
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -402,6 +403,47 @@ wss.on("connection", (ws: WebSocket, request) => {
           id: String(updated._id),
           text: updated.text,
           attachment: updated.attachment ?? null,
+        });
+        break;
+      }
+
+      case "TOGGLE_REACTION": {
+        if (!client) return;
+        if (!data.id || !mongoose.isValidObjectId(data.id)) return;
+        if (!isAllowedReaction(data.emoji)) return;
+        const emoji = data.emoji;
+
+        // Anyone in the room can react to any message in that room; the room
+        // filter stops reacting to messages from rooms you're not in.
+        const filter = { _id: data.id, room: client.room };
+        let existing;
+        try {
+          existing = await Message.findOne(filter).select("reactions").lean();
+        } catch {
+          return;
+        }
+        if (!existing) return;
+
+        const hasReacted = (existing.reactions?.[emoji] ?? []).includes(client.userId);
+        const path = `reactions.${emoji}`;
+        let updated;
+        try {
+          updated = await Message.findOneAndUpdate(
+            filter,
+            hasReacted
+              ? { $pull: { [path]: client.userId } }
+              : { $addToSet: { [path]: client.userId } },
+            { returnDocument: "after" },
+          ).lean();
+        } catch {
+          return;
+        }
+        if (!updated) return;
+
+        broadcast(client.room, {
+          type: "REACTIONS_UPDATED",
+          id: String(updated._id),
+          reactions: normalizeReactions(updated.reactions),
         });
         break;
       }

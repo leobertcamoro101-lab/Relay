@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
+import { normalizeReactions } from "../util/reactions.js";
 
 export interface IAttachment {
   url: string;
@@ -14,6 +15,7 @@ export interface IMessage extends Document {
   text: string;
   edited: boolean;
   attachment?: IAttachment; // NEW
+  reactions?: Record<string, string[]>; // emoji -> userIds who reacted
   createdAt: Date;
 }
 
@@ -39,6 +41,9 @@ const messageSchema = new Schema<IMessage>(
     text: { type: String, required: false, default: "", maxlength: 500 },
     edited: { type: Boolean, default: false },   // NEW
     attachment: { type: attachmentSchema, required: false }, // NEW
+    // emoji -> [userId, ...]. Mixed so each emoji key can be updated atomically
+    // with $addToSet/$pull (see TOGGLE_REACTION in index.ts).
+    reactions: { type: Schema.Types.Mixed, required: false },
   },
   { timestamps: true }
 );
@@ -66,6 +71,7 @@ export async function getRecentMessages(room: string, limit = 50) {
     timestamp: m.createdAt.getTime(),
     edited: m.edited,
     attachment: m.attachment, // NEW — carries through on room history/rejoin too
+    reactions: normalizeReactions(m.reactions),
   }));
 }
 

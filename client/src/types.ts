@@ -22,6 +22,7 @@ export interface ChatMessage {
   isMine?: boolean;
   edited?: boolean;
   attachment?: MessageAttachment;
+  reactions?: Record<string, string[]>; // emoji -> ids of users who reacted
 }
 
 export interface TypingUser {

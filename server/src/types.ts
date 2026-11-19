@@ -49,6 +49,12 @@ export interface EditMessageIn {
   attachment?: Attachment | null;
 }
 
+export interface ToggleReactionIn {
+  type: 'TOGGLE_REACTION';
+  id: string;
+  emoji: string; // must be one of REACTION_EMOJIS
+}
+
 export interface DeleteMessageIn {
   type: 'DELETE_MESSAGE';
   id: string;
@@ -60,6 +66,7 @@ export type ClientMessage =
   | TypingMessageIn
   | SwitchRoomMessageIn
   | EditMessageIn      // NEW
+  | ToggleReactionIn
   | DeleteMessageIn;   // NEW
 
 // ---- Messages the server sends back to clients ----
@@ -83,6 +90,7 @@ export interface ChatMessageOut {
   timestamp: number;
   edited?: boolean;   // NEW
   attachment?: Attachment; // NEW
+  reactions?: Record<string, string[]>;
 }
 
 export interface UserJoinedMessage {
@@ -124,6 +132,12 @@ export interface MessageEditedMessage {
   attachment: Attachment | null; // the attachment after the edit (null = none)
 }
 
+export interface ReactionsUpdatedMessage {
+  type: 'REACTIONS_UPDATED';
+  id: string;
+  reactions: Record<string, string[]>; // full set after the toggle, empties removed
+}
+
 export interface MessageDeletedMessage {
   type: 'MESSAGE_DELETED';
   id: string;
@@ -137,4 +151,5 @@ export type ServerMessage =
   | TypingMessageOut
   | RoomSwitchedMessage
   | MessageEditedMessage    // NEW
+  | ReactionsUpdatedMessage
   | MessageDeletedMessage;  // NEW;
