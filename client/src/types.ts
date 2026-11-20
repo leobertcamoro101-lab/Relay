@@ -12,6 +12,14 @@ export interface MessageAttachment {
   size: number; // bytes
 }
 
+// Snapshot of the message a reply quotes (stored by the server with the reply).
+export interface ReplyPreview {
+  id: string;
+  username: string;
+  text: string;
+  attachmentName?: string;
+}
+
 export interface ChatMessage {
   type?: 'MESSAGE' | 'SYSTEM';
   id?: string;
@@ -23,6 +31,7 @@ export interface ChatMessage {
   edited?: boolean;
   attachment?: MessageAttachment;
   reactions?: Record<string, string[]>; // emoji -> ids of users who reacted
+  replyTo?: ReplyPreview;
 }
 
 export interface TypingUser {

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMessageEditing } from "../../hooks/useMessageEditing";
 import { useClickOutside } from "../../hooks/useClickOutside";
-import { Pencil, Trash2, MoreVertical } from "lucide-react";
+import { Pencil, Trash2, MoreVertical, CornerUpLeft } from "lucide-react";
 import { useAttachmentEditing } from "../../hooks/useAttachmentEditing";
 import { ATTACHMENT_ACCEPT } from "../../utils/attachments";
 import MessageEditPanel from "./MessageEditPanel";
 import ReactionPicker from "./ReactionPicker";
 import ReactionBar from "./ReactionBar";
 import AttachmentPreview from "./AttachmentPreview";
+import ReplyQuote from "./ReplyQuote";
 import TypingIndicator from "./TypingIndicator";
 import type { ChatMessage, MessageAttachment, TypingUser, User } from "../../types";
 
@@ -24,6 +25,7 @@ interface MessageListProps {
   onEditMessage: (id: string, text: string, attachment?: MessageAttachment | null) => void;
   onDeleteMessage: (id: string) => void;
   onToggleReaction?: (id: string, emoji: string) => void; // omit to hide reactions
+  onReply?: (message: ChatMessage) => void; // omit to hide the Reply button
 }
 
 const MessageList = ({
@@ -33,6 +35,7 @@ const MessageList = ({
   onEditMessage,
   onDeleteMessage,
   onToggleReaction,
+  onReply,
 }: MessageListProps) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { editingId, editText, setEditText, startEdit, cancelEdit: cancelTextEdit } = useMessageEditing(onEditMessage);
@@ -55,6 +58,35 @@ const MessageList = ({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typingUsers]);
+
+  // Scroll to the quoted message and flash it. If the original isn't in the
+  // loaded history (or was deleted) there is nothing to scroll to — no-op.
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const jumpToMessage = useCallback((id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightId(id);
+    if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    highlightTimer.current = setTimeout(() => setHighlightId(null), 1500);
+  }, []);
+  useEffect(() => () => {
+    if (highlightTimer.current) clearTimeout(highlightTimer.current);
+  }, []);
+
+  const replyButton = (msg: ChatMessage) =>
+    onReply && (
+      <button
+        type="button"
+        onClick={() => onReply(msg)}
+        title="Reply"
+        aria-label="Reply"
+        className="p-2 rounded-full hover:bg-relay-hover text-relay-ink-subtle"
+      >
+        <CornerUpLeft size={20} />
+      </button>
+    );
 
   const handleDelete = (id: string) => {
     if (window.confirm("Delete this message?")) {
@@ -83,7 +115,10 @@ const MessageList = ({
         return (
           <div
             key={msg.id || i}
-            className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+            id={msg.id ? `msg-${msg.id}` : undefined}
+            className={`flex rounded-xl transition-colors duration-500 ${
+              isMine ? "justify-end" : "justify-start"
+            } ${msg.id && msg.id === highlightId ? "bg-relay-accent/15" : ""}`}
           >
             <div
               className={`group max-w-xs sm:max-w-md ${isMine ? "items-end" : "items-start"} flex flex-col`}
@@ -97,6 +132,7 @@ const MessageList = ({
               <div className="flex items-center gap-1">
                 {isMine && !isEditing && msg.id && (
                   <div className="hidden group-hover:flex items-center gap-1">
+                    {replyButton(msg)}
                     {onToggleReaction && (
                       <ReactionPicker onPick={(emoji) => onToggleReaction(msg.id!, emoji)} />
                     )}
@@ -153,6 +189,14 @@ const MessageList = ({
                         : "bg-relay-hover text-relay-ink rounded-tl-sm"
                     } ${msg.attachment ? "" : "px-4 py-2.5"}`}
                   >
+                    {msg.replyTo && (
+                      <ReplyQuote
+                        reply={msg.replyTo}
+                        isMine={!!isMine}
+                        onJump={jumpToMessage}
+                        className={msg.attachment ? "m-2 w-auto" : "mb-2"}
+                      />
+                    )}
                     {msg.attachment && (
                       <AttachmentPreview attachment={msg.attachment} isMine={!!isMine} />
                     )}
@@ -164,9 +208,12 @@ const MessageList = ({
                   </div>
                 )}
 
-                {!isMine && msg.id && onToggleReaction && (
+                {!isMine && msg.id && (onToggleReaction || onReply) && (
                   <div className="hidden group-hover:flex items-center">
-                    <ReactionPicker onPick={(emoji) => onToggleReaction(msg.id!, emoji)} />
+                    {onToggleReaction && (
+                      <ReactionPicker onPick={(emoji) => onToggleReaction(msg.id!, emoji)} />
+                    )}
+                    {replyButton(msg)}
                   </div>
                 )}
               </div>

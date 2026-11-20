@@ -16,6 +16,7 @@ export interface IMessage extends Document {
   edited: boolean;
   attachment?: IAttachment; // NEW
   reactions?: Record<string, string[]>; // emoji -> userIds who reacted
+  replyTo?: { id: string; username: string; text: string; attachmentName?: string };
   createdAt: Date;
 }
 
@@ -27,6 +28,16 @@ const attachmentSchema = new Schema<IAttachment>(
     size: { type: Number, required: true, min: 0 },
   },
   { _id: false } // just metadata alongside the message, no need for its own id
+);
+
+const replySchema = new Schema(
+  {
+    id: { type: String, required: true },
+    username: { type: String, required: true, maxlength: 100 },
+    text: { type: String, default: "", maxlength: 200 },
+    attachmentName: { type: String, maxlength: 255 },
+  },
+  { _id: false }
 );
 
 const messageSchema = new Schema<IMessage>(
@@ -44,6 +55,7 @@ const messageSchema = new Schema<IMessage>(
     // emoji -> [userId, ...]. Mixed so each emoji key can be updated atomically
     // with $addToSet/$pull (see TOGGLE_REACTION in index.ts).
     reactions: { type: Schema.Types.Mixed, required: false },
+    replyTo: { type: replySchema, required: false },
   },
   { timestamps: true }
 );
@@ -72,6 +84,7 @@ export async function getRecentMessages(room: string, limit = 50) {
     edited: m.edited,
     attachment: m.attachment, // NEW — carries through on room history/rejoin too
     reactions: normalizeReactions(m.reactions),
+    replyTo: m.replyTo,
   }));
 }
 

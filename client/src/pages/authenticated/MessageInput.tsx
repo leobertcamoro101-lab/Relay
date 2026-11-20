@@ -1,18 +1,21 @@
 import { useState, useRef, useCallback, useContext, useEffect } from 'react';
-import { Paperclip, File as FileIcon, X } from 'lucide-react';
+import { Paperclip, File as FileIcon, X, CornerUpLeft } from 'lucide-react';
 import { AuthContext } from '../../context/auth-context';
 import { useHttpClient } from '../../hooks/useHttpClient';
 import FilePicker from '../../components/FilePicker';
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENT_BYTES, formatFileSize } from '../../utils/attachments';
-import type { MessageAttachment } from '../../types';
+import type { MessageAttachment, ReplyPreview } from '../../types';
 
 interface MessageInputProps {
-  onSend: (text: string, attachment?: MessageAttachment) => void;
+  onSend: (text: string, attachment?: MessageAttachment, replyTo?: string) => void;
   onTyping: (isTyping: boolean) => void;
+  replyingTo?: ReplyPreview | null; // message being replied to, if any
+  onCancelReply?: () => void;
 }
 
-const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
+const MessageInput = ({ onSend, onTyping, replyingTo, onCancelReply }: MessageInputProps) => {
   const [text, setText] = useState('');
+  const textInputRef = useRef<HTMLInputElement>(null);
   const typingRef = useRef(false);
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -30,6 +33,12 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
       if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
     };
   }, [filePreviewUrl]);
+
+  // Starting a reply puts the cursor in the box so you can just type.
+  const replyId = replyingTo?.id;
+  useEffect(() => {
+    if (replyId) textInputRef.current?.focus();
+  }, [replyId]);
 
   const removeFile = useCallback(() => {
     setFile((current) => {
@@ -108,7 +117,14 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
         setIsUploading(false);
       }
 
-      onSend(trimmed, attachment);
+      // Only pass a third argument when actually replying, so plain sends keep
+      // the same call shape as before.
+      if (replyingTo) {
+        onSend(trimmed, attachment, replyingTo.id);
+        onCancelReply?.();
+      } else {
+        onSend(trimmed, attachment);
+      }
       setText('');
       removeFile();
       // Stop typing indicator
@@ -116,7 +132,7 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
       onTyping(false);
       if (typingTimeout.current) clearTimeout(typingTimeout.current);
     },
-    [text, file, onSend, onTyping, sendRequest, auth.token, removeFile]
+    [text, file, onSend, onTyping, sendRequest, auth.token, removeFile, replyingTo, onCancelReply]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -126,6 +142,10 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
     // inside a <form> submits natively on Enter regardless of shiftKey;
     // without this, Shift+Enter would silently fall through to that
     // native submit instead of being suppressed.
+    if (e.key === 'Escape' && replyingTo) {
+      onCancelReply?.();
+      return;
+    }
     if (e.key === 'Enter') {
       e.preventDefault();
       if (!e.shiftKey) {
@@ -138,6 +158,29 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="p-4 border-t border-relay-border">
+      {replyingTo && (
+        <div className="mb-2 flex items-center gap-2 rounded-xl border border-relay-border bg-relay-hover px-3 py-2">
+          <CornerUpLeft size={16} className="shrink-0 text-relay-accent" />
+          <div className="min-w-0 flex-1 border-l-2 border-relay-accent pl-2">
+            <p className="truncate text-xs font-semibold text-relay-ink">
+              Replying to {replyingTo.username}
+            </p>
+            <p className="truncate text-xs text-relay-ink-subtle">
+              {replyingTo.text || replyingTo.attachmentName || 'Message'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancelReply}
+            aria-label="Cancel reply"
+            title="Cancel reply"
+            className="shrink-0 rounded-full p-1 text-relay-ink-subtle hover:bg-relay-surface hover:text-relay-ink"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {file && (
         <div className="mb-2 flex items-center gap-2 rounded-xl border border-relay-border bg-relay-hover px-3 py-2">
           {filePreviewUrl ? (
@@ -188,6 +231,7 @@ const MessageInput = ({ onSend, onTyping }: MessageInputProps) => {
 
         <input
           id="message-text"
+          ref={textInputRef}
           name="message"
           type="text"
           value={text}

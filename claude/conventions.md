@@ -34,3 +34,43 @@ Messages can carry one file (image, video, document). How it works and what to k
 - `MessageInput.tsx` (composer) uses `components/FilePicker.tsx` for the paperclip: icon-only, validates type/size via `utils/attachments.ts`.
 - `MessageList.tsx` renders messages and keeps one shared hidden `<input type="file">` at the root of the list for "replace file". Keep it outside each message's `div.group`: the Playwright edit test uses `div.group input` and expects a single input there.
 - `MessageEditPanel.tsx` is the in-place editor; `hooks/useAttachmentEditing.ts` holds keep/remove/replace state and save logic next to `hooks/useMessageEditing.ts`. `AttachmentPreview.tsx` and `TypingIndicator.tsx` are small extracted components.
+
+---
+Convention: Message reactions (added 2026-11-20)
+---
+
+Anyone in a room can react to any message in that room (their own or others') with one of six emoji. Reactions are saved on the message and survive refresh and re-login.
+
+**Data and events**
+- Stored on the message as `reactions: { [emoji]: userId[] }` (Mongoose `Mixed`, so each emoji key can be updated atomically with `$addToSet` / `$pull`). History (`getRecentMessages`) returns them through `normalizeReactions`, which drops empty emoji.
+- Client sends `TOGGLE_REACTION { id, emoji }`. The server (`TOGGLE_REACTION` case in `server/src/index.ts`) only accepts messages in the sender's current room, reads the message to see whether the user already reacted, then adds or removes them and broadcasts `REACTIONS_UPDATED { id, reactions }` (the full set, empties removed) to the room. The client reducer in `useWebSocket.ts` replaces that message's `reactions`.
+- Allowed emoji: 👍 ❤️ 😂 😮 😢 🎉. The list lives in two places and must stay identical: `server/src/util/reactions.ts` (enforced, anything else is ignored) and `client/src/utils/reactions.ts`. Note ❤️ includes a variation selector, so copy it rather than retyping it.
+
+**Client structure** (`client/src/pages/authenticated/`)
+- `ReactionPicker.tsx`: the smiley button + emoji popover, one instance per message with its own open state (uses `useClickOutside`).
+- `ReactionBar.tsx`: the chips under a message (`👍 2`); highlighted when you reacted, click toggles.
+- `MessageList` takes an optional `onToggleReaction(id, emoji)`; without it no picker is shown and chips are read-only, which keeps older tests and callers working. `ChatInterface` passes `toggleReaction` from `useWebSocket`.
+
+**Known limitation**
+- The picker button is hover-only (`group-hover`), like the ⋮ menu, so it isn't reachable on touch screens yet. Both should become always visible below the `md` breakpoint. The Reply button (below) has the same limitation.
+
+**Tests**: `client/tests/components/Reactions.test.tsx`, `server/tests/util/reactions.test.ts`.
+
+---
+Convention: Replies (added 2026-11-20)
+---
+
+A message can quote another message in the same room. The reply shows a small preview (author + text, or the attachment name) at the top of its bubble; clicking the preview scrolls to the original and briefly highlights it.
+
+**Data and events**
+- Client sends `MESSAGE { text, attachment?, replyTo?: <message id> }`. Only the id is sent; the server looks the message up with `{ _id, room: client.room }` (so you can't quote a message from another room), and stores a **snapshot** on the new message: `replyTo: { id, username, text (truncated to 100 chars), attachmentName? }` (`server/src/util/reply.ts`). An invalid or unknown id just sends a normal message with no quote.
+- The snapshot is deliberate: the quote still renders after the original is edited or deleted, and it comes back with room history (`getRecentMessages`). The trade-off is that the quote does **not** update when the original is edited.
+- Edits to a reply (`EDIT_MESSAGE`) never touch `replyTo`.
+- If the original isn't in the loaded history (older than the last 50 messages) or was deleted, clicking the quote does nothing.
+
+**Client structure** (`client/src/pages/authenticated/`)
+- `ChatInterface` owns `replyingTo` state (cleared on room change) and passes `onReply` to `MessageList` and `replyingTo` / `onCancelReply` to `MessageInput`.
+- `MessageInput` shows a "Replying to <name>" banner above the composer (X or Escape cancels, input is focused). It calls `onSend(text, attachment, replyToId)` **only when replying**; plain sends still call `onSend(text, attachment)` with two arguments, which existing tests rely on.
+- `MessageList` takes an optional `onReply(message)` (no prop = no Reply button). Each row has `id="msg-<messageId>"`, used by the jump-to-original scroll. `ReplyQuote.tsx` renders the quote.
+
+**Tests**: `client/tests/components/Reply.test.tsx`, `server/tests/util/reply.test.ts`.

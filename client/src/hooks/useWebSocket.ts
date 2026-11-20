@@ -183,9 +183,11 @@ export const useWebSocket = () => {
   // ============================================
   // attachment is optional — a plain text message omits it entirely, so the
   // wire payload shape for existing text-only messages doesn't change.
-  const sendMessage = useCallback((text: string, attachment?: MessageAttachment) => {
+  // replyTo is the id of the message being replied to; the server validates it
+  // and attaches the quoted snapshot.
+  const sendMessage = useCallback((text: string, attachment?: MessageAttachment, replyTo?: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "MESSAGE", text, attachment }));
+      wsRef.current.send(JSON.stringify({ type: "MESSAGE", text, attachment, replyTo }));
     }
   }, []);
 

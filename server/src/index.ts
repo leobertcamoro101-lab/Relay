@@ -33,6 +33,7 @@ import {
 import { connectDB } from "./db.js";
 import { deleteAttachmentFile } from "./util/attachment-cleanup.js";
 import { isAllowedReaction, normalizeReactions } from "./util/reactions.js";
+import { buildReplySnapshot, isValidMessageId } from "./util/reply.js";
 import app from "./app.js";
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -256,6 +257,19 @@ wss.on("connection", (ws: WebSocket, request) => {
         const attachment = sanitizeAttachment(data.attachment);
         if (!text && !attachment) return; // genuinely nothing to send
 
+        // Optional reply: the quoted message must exist in the SAME room, so a
+        // client can't pull text from another room into this one. A bad or
+        // missing target just sends a normal message.
+        let replyTo;
+        if (isValidMessageId(data.replyTo)) {
+          try {
+            const original = await Message.findOne({ _id: data.replyTo, room: client.room }).lean();
+            if (original) replyTo = buildReplySnapshot(original);
+          } catch {
+            // lookup failed — fall through without a quote
+          }
+        }
+
         let saved;
         try {
           saved = await Message.create({
@@ -264,6 +278,7 @@ wss.on("connection", (ws: WebSocket, request) => {
             username: client.username,
             text,
             attachment, // NEW
+            replyTo,
           });
         } catch {
           return; // don't broadcast something that failed to save
@@ -277,6 +292,7 @@ wss.on("connection", (ws: WebSocket, request) => {
           text,
           timestamp: saved.createdAt.getTime(), // was: Date.now() — same reasoning, use the persisted time
           attachment: saved.attachment, // NEW
+          replyTo: saved.replyTo ?? undefined,
         });
         break;
       }

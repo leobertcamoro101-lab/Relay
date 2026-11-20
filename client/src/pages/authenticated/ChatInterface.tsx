@@ -12,6 +12,7 @@ import MessageInput from "../authenticated/MessageInput";
 import MessageList from "../authenticated/MessageList";
 import Sidebar from "./Sidebar";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import type { ChatMessage, ReplyPreview } from "../../types";
 
 const DEFAULT_ROOM = "general";
 
@@ -19,6 +20,7 @@ function ChatInterface() {
   const navigate = useNavigate();
   const { logout, token } = useContext(AuthContext);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ReplyPreview | null>(null);
 
   const handleLogout = () => {
     logout();
@@ -48,6 +50,21 @@ function ChatInterface() {
     startConversation: handleStartConversation,
     deleteConversation: handleDeleteConversation,
   } = useConversations(token, currentRoom, switchRoom, DEFAULT_ROOM);
+
+  // A reply target belongs to one room — drop it when the room changes.
+  useEffect(() => {
+    setReplyingTo(null);
+  }, [currentRoom]);
+
+  const handleReply = (msg: ChatMessage) => {
+    if (!msg.id || !msg.username) return;
+    setReplyingTo({
+      id: msg.id,
+      username: msg.username,
+      text: msg.text,
+      attachmentName: msg.attachment?.name,
+    });
+  };
 
   const isDM = currentRoom.startsWith("dm_");
   const dmPartner = isDM ? users.find((u) => u.id !== currentUser?.id) : null;
@@ -158,10 +175,16 @@ function ChatInterface() {
           onEditMessage={editMessage}     // NEW
           onDeleteMessage={deleteMessage} // NEW
           onToggleReaction={toggleReaction}
+          onReply={handleReply}
         />
 
         {/* Input */}
-        <MessageInput onSend={sendMessage} onTyping={sendTyping} />
+        <MessageInput
+          onSend={sendMessage}
+          onTyping={sendTyping}
+          replyingTo={replyingTo}
+          onCancelReply={() => setReplyingTo(null)}
+        />
       </div>
     </div>
   );

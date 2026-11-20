@@ -28,6 +28,7 @@ export interface ChatMessageIn {
   type: 'MESSAGE';
   text: string;
   attachment?: Attachment; // NEW
+  replyTo?: string; // id of the message being replied to (same room)
 }
 
 export interface TypingMessageIn {
@@ -81,6 +82,14 @@ export interface WelcomeMessage {
   messages: ChatMessageOut[];   // NEW
 }
 
+// Snapshot of the quoted message, stored with the reply (see util/reply.ts).
+export interface ReplyPreview {
+  id: string;
+  username: string;
+  text: string;
+  attachmentName?: string;
+}
+
 export interface ChatMessageOut {
   type: 'MESSAGE';
   id: string;
@@ -91,6 +100,7 @@ export interface ChatMessageOut {
   edited?: boolean;   // NEW
   attachment?: Attachment; // NEW
   reactions?: Record<string, string[]>;
+  replyTo?: ReplyPreview;
 }
 
 export interface UserJoinedMessage {
