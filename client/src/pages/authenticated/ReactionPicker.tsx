@@ -5,7 +5,17 @@ import { REACTION_EMOJIS } from "../../utils/reactions";
 
 // A small "add reaction" button that opens a row of emoji to pick from.
 // Each message gets its own instance, so it owns its open/closed state.
-export default function ReactionPicker({ onPick }: { onPick: (emoji: string) => void }) {
+// `align` is which edge of the button the popover lines up with. Own messages sit
+// on the right of the screen, so it opens leftwards ("right"); other people's sit
+// on the left next to the sidebar, so it must open rightwards ("left") or the
+// emoji row gets clipped.
+export default function ReactionPicker({
+  onPick,
+  align = "right",
+}: {
+  onPick: (emoji: string) => void;
+  align?: "left" | "right";
+}) {
   const [open, setOpen] = useState(false);
   const ref = useClickOutside(useCallback(() => setOpen(false), []));
 
@@ -17,7 +27,7 @@ export default function ReactionPicker({ onPick }: { onPick: (emoji: string) => 
         title="Add reaction"
         aria-label="Add reaction"
         aria-expanded={open}
-        className="p-2 rounded-full hover:bg-relay-hover text-relay-ink-subtle"
+        className="p-1.5 sm:p-2 rounded-full hover:bg-relay-hover text-relay-ink-subtle"
       >
         <SmilePlus size={20} />
       </button>
@@ -25,7 +35,7 @@ export default function ReactionPicker({ onPick }: { onPick: (emoji: string) => 
         <div
           role="menu"
           aria-label="Choose a reaction"
-          className="absolute bottom-full mb-1 right-0 z-10 flex gap-1 rounded-full border border-relay-border bg-relay-surface px-2 py-1 shadow-lg"
+          className={`absolute bottom-full mb-1 ${align === "left" ? "left-0" : "right-0"} z-10 flex gap-1 rounded-full border border-relay-border bg-relay-surface px-2 py-1 shadow-lg`}
         >
           {REACTION_EMOJIS.map((emoji) => (
             <button

@@ -82,7 +82,7 @@ const MessageList = ({
         onClick={() => onReply(msg)}
         title="Reply"
         aria-label="Reply"
-        className="p-2 rounded-full hover:bg-relay-hover text-relay-ink-subtle"
+        className="p-1.5 sm:p-2 rounded-full hover:bg-relay-hover text-relay-ink-subtle"
       >
         <CornerUpLeft size={20} />
       </button>
@@ -131,7 +131,7 @@ const MessageList = ({
 
               <div className="flex items-center gap-1">
                 {isMine && !isEditing && msg.id && (
-                  <div className="hidden group-hover:flex items-center gap-1">
+                  <div className="hidden group-hover:flex group-focus-within:flex [@media(hover:none)]:flex items-center gap-1">
                     {replyButton(msg)}
                     {onToggleReaction && (
                       <ReactionPicker onPick={(emoji) => onToggleReaction(msg.id!, emoji)} />
@@ -139,7 +139,7 @@ const MessageList = ({
                     <div className="relative" ref={isMenuOpen ? menuRef : undefined}>
                       <button
                         onClick={() => setOpenMessageId(isMenuOpen ? null : msg.id!)}
-                        className="p-2 rounded-full hover:bg-relay-hover text-relay-ink-subtle"
+                        className="p-1.5 sm:p-2 rounded-full hover:bg-relay-hover text-relay-ink-subtle"
                         title="Message options"
                         aria-label="Message options"
                       >
@@ -209,9 +209,9 @@ const MessageList = ({
                 )}
 
                 {!isMine && msg.id && (onToggleReaction || onReply) && (
-                  <div className="hidden group-hover:flex items-center">
+                  <div className="hidden group-hover:flex group-focus-within:flex [@media(hover:none)]:flex items-center">
                     {onToggleReaction && (
-                      <ReactionPicker onPick={(emoji) => onToggleReaction(msg.id!, emoji)} />
+                      <ReactionPicker align="left" onPick={(emoji) => onToggleReaction(msg.id!, emoji)} />
                     )}
                     {replyButton(msg)}
                   </div>

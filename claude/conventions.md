@@ -51,8 +51,9 @@ Anyone in a room can react to any message in that room (their own or others') wi
 - `ReactionBar.tsx`: the chips under a message (`👍 2`); highlighted when you reacted, click toggles.
 - `MessageList` takes an optional `onToggleReaction(id, emoji)`; without it no picker is shown and chips are read-only, which keeps older tests and callers working. `ChatInterface` passes `toggleReaction` from `useWebSocket`.
 
-**Known limitation**
-- The picker button is hover-only (`group-hover`), like the ⋮ menu, so it isn't reachable on touch screens yet. Both should become always visible below the `md` breakpoint. The Reply button (below) has the same limitation.
+**Hover vs touch**
+- The picker, Reply and ⋮ buttons are hidden until you hover or focus a message on devices with a mouse. On touch devices (`@media (hover: none)`) they are always visible. This is by device type, not screen width: Chrome DevTools device mode emulates touch, so buttons show there even at a wide width.
+- The picker popover takes `align`: `right` for your own messages (opens leftwards), `left` for others' (opens rightwards) so it isn't clipped by the sidebar.
 
 **Tests**: `client/tests/components/Reactions.test.tsx`, `server/tests/util/reactions.test.ts`.
 
