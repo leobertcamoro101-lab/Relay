@@ -18,7 +18,23 @@ interface SidebarProps {
   conversations: ConversationSummary[];
   onStartConversation: (userId: string) => void;
   onDeleteConversation: (roomId: string) => void;
+  unread?: Record<string, number>;   // room -> unread count (dot when > 0)
+  activity?: Record<string, number>; // room -> last message time (newest sorted first)
 }
+
+// Rooms / DMs with recent activity float to the top, newest first. Everything
+// without activity keeps its original order below them (Array.sort is stable).
+function byRecentActivity<T>(items: T[], getRoom: (item: T) => string, activity: Record<string, number>): T[] {
+  return [...items].sort((a, b) => (activity[getRoom(b)] ?? 0) - (activity[getRoom(a)] ?? 0));
+}
+
+const UnreadDot = () => (
+  <span
+    role="img"
+    aria-label="Unread messages"
+    className="w-2 h-2 rounded-full bg-relay-accent shrink-0"
+  />
+);
 
 const conversationLabel = (conversation: ConversationSummary) =>
   conversation.otherUser
@@ -36,6 +52,8 @@ const Sidebar = ({
   conversations,
   onStartConversation,
   onDeleteConversation,
+  unread = {},
+  activity = {},
 }: SidebarProps) => {
   // Which conversation's "⋮" menu is open, by roomId (or none). One shared
   // piece of state instead of a useState per row — see rules-of-hooks.
@@ -76,17 +94,18 @@ const Sidebar = ({
           {/* Rooms */}
           <div className="p-3">
             <p className="text-relay-ink-subtle text-xs uppercase tracking-widest mb-2 px-2">Rooms</p>
-            {ROOMS.map((room) => (
+            {byRecentActivity(ROOMS, (r) => r, activity).map((room) => (
               <button
                 key={room}
                 onClick={() => room !== currentRoom && onSwitchRoom(room)}
-                className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-colors mb-1 ${
+                className={`w-full flex items-center gap-2 text-left px-3 py-2 rounded-xl text-sm transition-colors mb-1 ${
                   room === currentRoom
                     ? 'bg-relay-accent/12 text-relay-accent-ink font-medium'
                     : 'text-relay-ink-muted hover:bg-relay-hover hover:text-relay-ink'
-                }`}
+                } ${unread[room] ? 'font-semibold text-relay-ink' : ''}`}
               >
-                # {room}
+                <span className="flex-1 truncate"># {room}</span>
+                {unread[room] > 0 && <UnreadDot />}
               </button>
             ))}
           </div>
@@ -102,7 +121,7 @@ const Sidebar = ({
                 Search above, or click an online user below, to start a DM.
               </p>
             )}
-            {conversations.map((conversation) => {
+            {byRecentActivity(conversations, (c) => c.roomId, activity).map((conversation) => {
               const label = conversationLabel(conversation);
               const isActive = conversation.roomId === currentRoom;
               const isMenuOpen = conversation.roomId === openMenuRoomId;
@@ -116,9 +135,10 @@ const Sidebar = ({
                   }`}
                   onClick={() => onSwitchRoom(conversation.roomId)}
                 >
-                  <span className={`truncate flex-1 ${!conversation.otherUser ? 'italic text-relay-ink-subtle' : ''}`}>
+                  <span className={`truncate flex-1 ${!conversation.otherUser ? 'italic text-relay-ink-subtle' : ''} ${unread[conversation.roomId] ? 'font-semibold text-relay-ink' : ''}`}>
                     {label}
                   </span>
+                  {unread[conversation.roomId] > 0 && <UnreadDot />}
                   <div className="hidden group-hover:flex items-center gap-1">
                     <div className="relative" ref={isMenuOpen ? menuRef : undefined}>
                       <button
@@ -160,6 +180,8 @@ const Sidebar = ({
             </p>
             {users.map((user) => {
               const isMe = user.id === currentUser?.id;
+              const dm = conversations.find((c) => c.otherUser?.id === user.id);
+              const hasUnread = !!dm && unread[dm.roomId] > 0;
               return (
                 <div
                   key={user.id}
@@ -176,6 +198,7 @@ const Sidebar = ({
                     {user.username}
                     {isMe && ' (you)'}
                   </span>
+                  {hasUnread && <span className="ml-auto"><UnreadDot /></span>}
                 </div>
               );
             })}

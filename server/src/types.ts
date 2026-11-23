@@ -153,6 +153,14 @@ export interface MessageDeletedMessage {
   id: string;
 }
 
+// Sent to connected users who are NOT in the room a message was posted in, so
+// their sidebar can show an unread dot. It carries no message content.
+export interface UnreadMessageOut {
+  type: 'UNREAD';
+  room: string;
+  timestamp: number;
+}
+
 export type ServerMessage =
   | WelcomeMessage
   | ChatMessageOut
@@ -162,4 +170,5 @@ export type ServerMessage =
   | RoomSwitchedMessage
   | MessageEditedMessage    // NEW
   | ReactionsUpdatedMessage
-  | MessageDeletedMessage;  // NEW;
+  | MessageDeletedMessage  // NEW
+  | UnreadMessageOut;

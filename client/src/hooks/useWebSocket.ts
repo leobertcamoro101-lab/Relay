@@ -28,7 +28,8 @@ interface ServerMessage {
     | "ROOM_SWITCHED"
     | "MESSAGE_EDITED"   // NEW
     | "REACTIONS_UPDATED"
-    | "MESSAGE_DELETED"; // NEW;
+    | "MESSAGE_DELETED"   // NEW
+    | "UNREAD";
   userId?: string;
   username?: string;
   room?: string;
@@ -49,6 +50,12 @@ export const useWebSocket = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentRoom, setCurrentRoom] = useState("general");
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
+  // room -> number of messages received while you were elsewhere (drives the
+  // sidebar dot), and room -> time of its latest message (drives sidebar order).
+  // Session-only: not persisted, so a page refresh starts clean.
+  const [unreadRooms, setUnreadRooms] = useState<Record<string, number>>({});
+  const [roomActivity, setRoomActivity] = useState<Record<string, number>>({});
+  const roomRef = useRef("general"); // current room, readable inside the socket handler
   const typingTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>(
     {},
   );
@@ -82,14 +89,29 @@ export const useWebSocket = () => {
       case "WELCOME":
         setCurrentUser({ id: data.userId!, username: data.username! });
         setCurrentRoom(data.room!);
+        roomRef.current = data.room!;
         setUsers(data.users || []);
         setOnlineCount(data.onlineCount || 0);
         setMessages(data.messages || []);
         break;
 
-      case "MESSAGE":
+      case "MESSAGE": {
         setMessages((prev) => [...prev, data as unknown as ChatMessage]);
+        // Keep the room you're talking in at the top of the sidebar too.
+        const room = roomRef.current;
+        const at = typeof data.timestamp === "number" ? data.timestamp : Date.now();
+        setRoomActivity((prev) => ({ ...prev, [room]: at }));
         break;
+      }
+
+      case "UNREAD": {
+        const room = data.room as string | undefined;
+        if (!room || room === roomRef.current) break;
+        const at = typeof data.timestamp === "number" ? data.timestamp : Date.now();
+        setUnreadRooms((prev) => ({ ...prev, [room]: (prev[room] ?? 0) + 1 }));
+        setRoomActivity((prev) => ({ ...prev, [room]: at }));
+        break;
+      }
 
       case "USER_JOINED":
         setUsers(data.users || []);
@@ -127,6 +149,14 @@ export const useWebSocket = () => {
 
       case "ROOM_SWITCHED":
         setCurrentRoom(data.room!);
+        roomRef.current = data.room!;
+        // opening a room reads it
+        setUnreadRooms((prev) => {
+          if (!(data.room! in prev)) return prev;
+          const rest = { ...prev };
+          delete rest[data.room!];
+          return rest;
+        });
         setUsers(data.users || []);
         setOnlineCount(data.onlineCount || 0);
         setMessages(data.messages || []);
@@ -262,5 +292,7 @@ export const useWebSocket = () => {
     editMessage,     // NEW
     deleteMessage,   // NEW
     toggleReaction,
+    unreadRooms,
+    roomActivity,
   };
 };

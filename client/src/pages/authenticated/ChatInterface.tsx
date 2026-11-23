@@ -1,7 +1,7 @@
 import {
   useContext,
   useEffect,
-  // useRef
+  useRef,
   useState
  } from "react";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import type { ChatMessage, ReplyPreview } from "../../types";
 
 const DEFAULT_ROOM = "general";
+const NO_ROOM_STATE: Record<string, number> = {}; // stable default so effects don't re-run every render
 
 function ChatInterface() {
   const navigate = useNavigate();
@@ -43,13 +44,31 @@ function ChatInterface() {
     editMessage,     // NEW
     deleteMessage,   // NEW
     toggleReaction,
+    unreadRooms = NO_ROOM_STATE,
+    roomActivity = NO_ROOM_STATE,
   } = useWebSocket();
 
   const {
     conversations,
     startConversation: handleStartConversation,
     deleteConversation: handleDeleteConversation,
+    refreshConversations,
   } = useConversations(token, currentRoom, switchRoom, DEFAULT_ROOM);
+
+  // Someone started a DM with you: the room pings us before it's in the DM
+  // list, so fetch the list once for each such room.
+  const refreshedRooms = useRef(new Set<string>());
+  useEffect(() => {
+    for (const room of Object.keys(unreadRooms)) {
+      if (!room.startsWith("dm_")) continue;
+      if (conversations.some((c) => c.roomId === room)) continue;
+      if (refreshedRooms.current.has(room)) continue;
+      refreshedRooms.current.add(room);
+      refreshConversations?.();
+    }
+  }, [unreadRooms, conversations, refreshConversations]);
+
+  const hasUnread = Object.keys(unreadRooms).length > 0;
 
   // A reply target belongs to one room — drop it when the room changes.
   useEffect(() => {
@@ -107,6 +126,8 @@ function ChatInterface() {
         conversations={conversations}
         onStartConversation={handleStartConversation}
         onDeleteConversation={handleDeleteConversation}
+        unread={unreadRooms}
+        activity={roomActivity}
       />
 
       {/* Chat area */}
@@ -116,7 +137,7 @@ function ChatInterface() {
           <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden text-relay-ink-subtle hover:text-relay-ink transition-colors"
+            className="relative md:hidden text-relay-ink-subtle hover:text-relay-ink transition-colors"
             aria-label="Open menu"
           >
             <svg
@@ -133,6 +154,10 @@ function ChatInterface() {
                 d="M4 6h16M4 12h16M4 18h16"
               />
             </svg>
+            {/* unread elsewhere: hint on the closed drawer button */}
+            {hasUnread && (
+              <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-relay-accent ring-2 ring-relay-bg" />
+            )}
           </button>
           <div>
             <h2 className="text-relay-ink font-bold">{roomLabel}</h2>

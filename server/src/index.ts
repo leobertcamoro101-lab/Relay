@@ -34,6 +34,7 @@ import { connectDB } from "./db.js";
 import { deleteAttachmentFile } from "./util/attachment-cleanup.js";
 import { isAllowedReaction, normalizeReactions } from "./util/reactions.js";
 import { buildReplySnapshot, isValidMessageId } from "./util/reply.js";
+import { getUnreadRecipients } from "./util/unread.js";
 import app from "./app.js";
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -99,6 +100,16 @@ function broadcast(
   for (const member of getRoomMembers(room)) {
     if (member.id === excludeUserId) continue;
     send(member.ws, message);
+  }
+}
+
+// Every joined connection, so a message can ping people who are in a different
+// room (see notifyUnread). Added on JOIN, removed on close.
+const activeClients = new Set<ClientState>();
+
+function notifyUnread(room: string, senderUserId: string, timestamp: number): void {
+  for (const c of getUnreadRecipients(activeClients, room, senderUserId, canJoinRoom)) {
+    send(c.ws, { type: "UNREAD", room, timestamp });
   }
 }
 
@@ -212,7 +223,9 @@ wss.on("connection", (ws: WebSocket, request) => {
       }
 
       const username = user.name.slice(0, 20);
+      if (client) activeClients.delete(client); // a repeat JOIN replaces, never duplicates
       client = { ws, id: randomUUID(), userId: decoded.userId, username, room };
+      activeClients.add(client);
 
       let history: Awaited<ReturnType<typeof getRecentMessages>> = [];
       try{
@@ -294,6 +307,7 @@ wss.on("connection", (ws: WebSocket, request) => {
           attachment: saved.attachment, // NEW
           replyTo: saved.replyTo ?? undefined,
         });
+        notifyUnread(client.room, client.userId, saved.createdAt.getTime());
         break;
       }
 
@@ -498,6 +512,7 @@ wss.on("connection", (ws: WebSocket, request) => {
       connectionsByIp.set(clientIp, count - 1);
     }
     if (!client) return;
+    activeClients.delete(client);
     leaveRoom(client.room, client.id);
     broadcast(client.room, {
       type: "USER_LEFT",

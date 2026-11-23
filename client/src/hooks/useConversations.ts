@@ -5,7 +5,7 @@ import type { ConversationSummary } from "../types";
 // Owns the Direct Messages list: fetching it on mount, starting a new
 // conversation, and deleting one. Pulled out of ChatInterface.tsx so that
 // component only has to deal with session lifecycle (connect/logout) and
-// rendering — this hook is the whole conversations subsystem.
+// rendering - this hook is the whole conversations subsystem.
 export const useConversations = (
   token: string | null,
   currentRoom: string,
@@ -75,5 +75,7 @@ export const useConversations = (
     [token, sendRequest, currentRoom, switchRoom, fallbackRoom]
   );
 
-  return { conversations, startConversation, deleteConversation };
+  // refreshConversations: re-fetch the list, e.g. when someone starts a DM
+  // with you and it isn't in the sidebar yet.
+  return { conversations, startConversation, deleteConversation, refreshConversations: fetchConversations };
 };
