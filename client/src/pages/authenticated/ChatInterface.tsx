@@ -12,6 +12,7 @@ import MessageInput from "../authenticated/MessageInput";
 import MessageList from "../authenticated/MessageList";
 import Sidebar from "./Sidebar";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { getLastRoom, saveLastRoom, clearLastRoom } from "../../utils/lastRoom";
 import type { ChatMessage, ReplyPreview } from "../../types";
 
 const DEFAULT_ROOM = "general";
@@ -55,6 +56,13 @@ function ChatInterface() {
     refreshConversations,
   } = useConversations(token, currentRoom, switchRoom, DEFAULT_ROOM);
 
+  // Remember the room once the server has confirmed we're in it.
+  useEffect(() => {
+    if (status !== "connected" || !currentUser) return;
+    if (currentRoom === DEFAULT_ROOM) clearLastRoom();
+    else saveLastRoom(currentRoom);
+  }, [status, currentUser, currentRoom]);
+
   // Someone started a DM with you: the room pings us before it's in the DM
   // list, so fetch the list once for each such room.
   const refreshedRooms = useRef(new Set<string>());
@@ -92,7 +100,8 @@ function ChatInterface() {
   // Auto-join using the logged-in user's name — no manual username entry
   useEffect(() => {
     if (status === "disconnected" && token) {
-      connect(token, DEFAULT_ROOM);
+      // Back to the room you were in (refresh / reconnect), else the default.
+      connect(token, getLastRoom() ?? DEFAULT_ROOM);
     }
   }, [status, token, connect, currentRoom, currentUser, users]);
 

@@ -13,6 +13,7 @@
 // reusable and React-friendly.
 // ============================================
 import { useState, useEffect, useRef, useCallback } from "react";
+import { clearLastRoom } from "../utils/lastRoom";
 import type { ChatMessage, ConnectionStatus, MessageAttachment, TypingUser, User } from "../types";
 
 // const WS_URL = "ws://localhost:8080"; // commented because of deploy (change)
@@ -210,6 +211,11 @@ export const useWebSocket = () => {
     setCurrentUser(null);
     if (event.code === 4001) {
       setAuthError(true);
+    }
+    // 4001 = bad login, 4003 = not allowed in that room. Either way a remembered
+    // room can't be trusted, so forget it and the next connect uses the default.
+    if (event.code === 4001 || event.code === 4003) {
+      clearLastRoom();
     }
   };
 
