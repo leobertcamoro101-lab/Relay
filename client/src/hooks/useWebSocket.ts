@@ -93,6 +93,17 @@ export const useWebSocket = () => {
         setUsers(data.users || []);
         setOnlineCount(data.onlineCount || 0);
         setMessages(data.messages || []);
+        // Saved unread state (from the server's read markers): replaces the
+        // dots and merges room activity (newest wins) so the sidebar is sorted
+        // from the first render, even after a refresh or on another device.
+        setUnreadRooms({ ...((data.unread as Record<string, number> | undefined) ?? {}) });
+        setRoomActivity((prev) => {
+          const next = { ...prev };
+          for (const [room, at] of Object.entries((data.activity as Record<string, number> | undefined) ?? {})) {
+            next[room] = Math.max(next[room] ?? 0, at);
+          }
+          return next;
+        });
         break;
 
       case "MESSAGE": {

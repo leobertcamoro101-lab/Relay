@@ -75,3 +75,26 @@ A message can quote another message in the same room. The reply shows a small pr
 - `MessageList` takes an optional `onReply(message)` (no prop = no Reply button). Each row has `id="msg-<messageId>"`, used by the jump-to-original scroll. `ReplyQuote.tsx` renders the quote.
 
 **Tests**: `client/tests/components/Reply.test.tsx`, `server/tests/util/reply.test.ts`.
+
+---
+Convention: Unread dots and sidebar order (added 2026-11-23)
+---
+
+A room or DM that gets a message while you are looking at a different room shows a colored dot in the sidebar and moves to the top of its list.
+
+**Live updates**
+- The server only sends a room's messages to people currently in that room, so it sends a separate small `UNREAD { room, timestamp }` event (no message content) to everyone else who is connected. `notifyUnread` in `server/src/index.ts` does this after each `MESSAGE`, using `getUnreadRecipients` (`server/src/util/unread.ts`): skips the sender (including their other tabs) and anyone already in that room, and uses `canJoinRoom` so a DM only pings its two participants. `index.ts` keeps an `activeClients` set (added on JOIN, removed on close) to find those connections.
+- `useWebSocket` keeps two maps: `unreadRooms` (room -> count, cleared when you open the room) and `roomActivity` (room -> time of the latest message, never cleared, so the order sticks after you read it). A message in the room you are in also bumps `roomActivity`, so the room you are chatting in stays on top.
+
+**Saved read state (survives refresh, logout, other devices)**
+- `models/read-state.ts` has a `ReadState` collection: one document per (userId, room) with `lastReadAt`. `markRoomRead` upserts it with `$max` (never moves backwards): on JOIN, on SWITCH_ROOM (both the room you leave and the one you enter), and when the socket closes. Failures only log; it is skipped when there is no DB connection (so the websocket tests don't queue Mongo calls).
+- Right after WELCOME the server sends `UNREAD_SNAPSHOT { unread, activity }` (`getUnreadSnapshot`): for the public rooms plus the user's DMs (matched by `dmRoomPattern`) it computes each room's newest message time and counts other people's messages newer than `lastReadAt` (counts capped at 99, never for the room you're in). The client replaces `unreadRooms` with it and merges `activity` (max per room), so the sidebar is sorted by recent activity from the first render.
+- `PUBLIC_ROOMS` in `server/src/util/read-state.ts` must match `ROOMS` in `Sidebar.tsx`.
+- A room with no read marker counts as read up to `UNREAD_START` (a constant in `util/read-state.ts`), otherwise the first deploy would flag all existing history as unread. A brand-new DM sent after that date still shows as unread. Move the constant if you ever backfill.
+- "Read" means the room was open on the socket, not that the tab was focused or scrolled to the bottom.
+
+**Sidebar**
+- `Sidebar` takes optional `unread` and `activity` props: rooms and DMs are sorted newest-activity first (stable, so ones with no activity keep their default order below). The dot also appears next to the person in the Online list if you have a DM with them, and on the mobile menu button when anything is unread.
+- If someone starts a DM with you, `ChatInterface` re-fetches the DM list once (`refreshConversations` from `useConversations`) because the room pings (or the snapshot lists it) before it is in the DM list.
+
+**Tests**: `server/tests/util/unread.test.ts`, `server/tests/util/read-state.test.ts` (the counting logic; the Mongo queries themselves aren't covered by a test), `client/tests/components/Sidebar-unread.test.tsx`, `client/tests/components/useWebSocket-unread.test.tsx`.

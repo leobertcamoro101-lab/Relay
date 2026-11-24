@@ -80,6 +80,11 @@ export interface WelcomeMessage {
   users: User[];
   onlineCount: number;
   messages: ChatMessageOut[];   // NEW
+  // Saved unread state, so dots and sidebar order survive a refresh or a login
+  // on another device (see models/read-state.ts). Rides on WELCOME instead of
+  // being its own message so nothing arrives between WELCOME and the next event.
+  unread?: Record<string, number>;   // room -> unread count (rooms > 0 only)
+  activity?: Record<string, number>; // room -> newest message time (ms)
 }
 
 // Snapshot of the quoted message, stored with the reply (see util/reply.ts).

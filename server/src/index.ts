@@ -35,6 +35,7 @@ import { deleteAttachmentFile } from "./util/attachment-cleanup.js";
 import { isAllowedReaction, normalizeReactions } from "./util/reactions.js";
 import { buildReplySnapshot, isValidMessageId } from "./util/reply.js";
 import { getUnreadRecipients } from "./util/unread.js";
+import { getUnreadSnapshot, markRoomRead } from "./models/read-state.js";
 import app from "./app.js";
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -237,6 +238,17 @@ wss.on("connection", (ws: WebSocket, request) => {
 
       joinRoom(room, client);
 
+      // Saved unread state for the sidebar (skips the room being joined). Never
+      // blocks joining: on any failure the client just starts with no dots.
+      let unreadState: { unread: Record<string, number>; activity: Record<string, number> } = {
+        unread: {},
+        activity: {},
+      };
+      try {
+        unreadState = await getUnreadSnapshot(client.userId, room);
+      } catch (err) {
+        console.error("Failed to load unread state on JOIN:", err);
+      }
 
       send(ws, {
         type: "WELCOME",
@@ -246,7 +258,11 @@ wss.on("connection", (ws: WebSocket, request) => {
         users: getRoomUsers(room),
         onlineCount: getRoomOnlineCount(room),
         messages: history,
+        ...unreadState,
       });
+
+      // The user is now looking at this room, so it counts as read.
+      void markRoomRead(client.userId, room);
 
       broadcast(
         room,
@@ -333,6 +349,9 @@ wss.on("connection", (ws: WebSocket, request) => {
         if (!canJoinRoom(newRoom, client.userId)) return; // NEW — silently ignore, don't leak that the room exists
 
         const oldRoom = client.room;
+        // Leaving a room means everything in it was seen; entering one reads it.
+        void markRoomRead(client.userId, oldRoom);
+        void markRoomRead(client.userId, newRoom);
         leaveRoom(oldRoom, client.id);
         broadcast(oldRoom, {
           type: "USER_LEFT",
@@ -513,6 +532,7 @@ wss.on("connection", (ws: WebSocket, request) => {
     }
     if (!client) return;
     activeClients.delete(client);
+    void markRoomRead(client.userId, client.room);
     leaveRoom(client.room, client.id);
     broadcast(client.room, {
       type: "USER_LEFT",

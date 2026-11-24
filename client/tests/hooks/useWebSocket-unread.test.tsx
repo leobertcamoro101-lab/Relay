@@ -67,4 +67,34 @@ describe("useWebSocket unread tracking", () => {
     act(() => FakeSocket.last.emit({ type: "MESSAGE", id: "m1", userId: "x", username: "X", text: "hi", timestamp: 999 }));
     expect(result.current.roomActivity.general).toBe(999);
   });
+
+  it("loads saved unread counts and room order from the WELCOME message", () => {
+    const { result } = connected();
+    act(() =>
+      FakeSocket.last.emit({
+        type: "WELCOME", userId: "me", username: "Me", room: "general", users: [], onlineCount: 1, messages: [],
+        unread: { tech: 4, dm_a_b: 1 },
+        activity: { tech: 300, dm_a_b: 200, general: 100 },
+      })
+    );
+    expect(result.current.unreadRooms).toEqual({ tech: 4, dm_a_b: 1 });
+    expect(result.current.roomActivity).toMatchObject({ tech: 300, dm_a_b: 200, general: 100 });
+  });
+
+  it("starts with no dots when WELCOME has no unread state", () => {
+    const { result } = connected();
+    expect(result.current.unreadRooms).toEqual({});
+  });
+
+  it("never moves a room's activity backwards when WELCOME arrives", () => {
+    const { result } = connected();
+    act(() => FakeSocket.last.emit({ type: "UNREAD", room: "tech", timestamp: 900 }));
+    act(() =>
+      FakeSocket.last.emit({
+        type: "WELCOME", userId: "me", username: "Me", room: "general", users: [], onlineCount: 1, messages: [],
+        unread: {}, activity: { tech: 500 },
+      })
+    );
+    expect(result.current.roomActivity.tech).toBe(900);
+  });
 });
