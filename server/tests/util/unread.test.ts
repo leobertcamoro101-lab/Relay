@@ -39,4 +39,18 @@ describe("getUnreadRecipients", () => {
     const out = getUnreadRecipients([{ userId: "alice", room: "tech" }], "general", "alice", canJoin);
     expect(out).toEqual([]);
   });
+
+  it("pings a client in the room whose tab is hidden", () => {
+    const list = [
+      { userId: "bob", room: "general", hidden: true },
+      { userId: "carol", room: "general", hidden: false },
+    ];
+    const out = getUnreadRecipients(list, "general", "alice", canJoin, (c) => c.hidden);
+    expect(out.map((c) => c.userId)).toEqual(["bob"]);
+  });
+
+  it("never pings the sender, even with a hidden tab", () => {
+    const list = [{ userId: "alice", room: "general", hidden: true }];
+    expect(getUnreadRecipients(list, "general", "alice", canJoin, (c) => c.hidden)).toEqual([]);
+  });
 });

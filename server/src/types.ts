@@ -41,6 +41,13 @@ export interface SwitchRoomMessageIn {
   room: string;
 }
 
+// Sent when the browser tab is hidden or shown again, so messages that arrive
+// in the open room while nobody is looking stay unread.
+export interface VisibilityMessageIn {
+  type: 'VISIBILITY';
+  visible: boolean;
+}
+
 export interface EditMessageIn {
   type: 'EDIT_MESSAGE';
   id: string;
@@ -66,6 +73,7 @@ export type ClientMessage =
   | ChatMessageIn
   | TypingMessageIn
   | SwitchRoomMessageIn
+  | VisibilityMessageIn
   | EditMessageIn      // NEW
   | ToggleReactionIn
   | DeleteMessageIn;   // NEW

@@ -94,6 +94,8 @@ export const useWebSocket = () => {
         setUsers(data.users || []);
         setOnlineCount(data.onlineCount || 0);
         setMessages(data.messages || []);
+        // A fresh connection starts as "visible" on the server; say so if it isn't.
+        if (document.hidden) ws.send(JSON.stringify({ type: "VISIBILITY", visible: false }));
         // Saved unread state (from the server's read markers): replaces the
         // dots and merges room activity (newest wins) so the sidebar is sorted
         // from the first render, even after a refresh or on another device.
@@ -118,7 +120,8 @@ export const useWebSocket = () => {
 
       case "UNREAD": {
         const room = data.room as string | undefined;
-        if (!room || room === roomRef.current) break;
+        // The open room only counts as unread while the tab is hidden.
+        if (!room || (room === roomRef.current && !document.hidden)) break;
         const at = typeof data.timestamp === "number" ? data.timestamp : Date.now();
         setUnreadRooms((prev) => ({ ...prev, [room]: (prev[room] ?? 0) + 1 }));
         setRoomActivity((prev) => ({ ...prev, [room]: at }));
@@ -284,6 +287,28 @@ export const useWebSocket = () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "DELETE_MESSAGE", id }));
     }
+  }, []);
+
+  // Tell the server when the tab is hidden/shown, and clear the open room's dot
+  // as soon as you come back to it.
+  useEffect(() => {
+    const onVisibility = () => {
+      const visible = !document.hidden;
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "VISIBILITY", visible }));
+      }
+      if (visible) {
+        const room = roomRef.current;
+        setUnreadRooms((prev) => {
+          if (!prev[room]) return prev;
+          const next = { ...prev };
+          delete next[room];
+          return next;
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
   // Cleanup on unmount

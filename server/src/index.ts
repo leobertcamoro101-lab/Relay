@@ -108,8 +108,13 @@ function broadcast(
 // room (see notifyUnread). Added on JOIN, removed on close.
 const activeClients = new Set<ClientState>();
 
+// When each connection's tab was hidden (absent = visible). While hidden, the
+// open room counts as unread, and leaving it marks it read only up to this time.
+const hiddenSince = new WeakMap<ClientState, number>();
+const readAt = (c: ClientState): Date => new Date(hiddenSince.get(c) ?? Date.now());
+
 function notifyUnread(room: string, senderUserId: string, timestamp: number): void {
-  for (const c of getUnreadRecipients(activeClients, room, senderUserId, canJoinRoom)) {
+  for (const c of getUnreadRecipients(activeClients, room, senderUserId, canJoinRoom, (c) => hiddenSince.has(c))) {
     send(c.ws, { type: "UNREAD", room, timestamp });
   }
 }
@@ -327,6 +332,17 @@ wss.on("connection", (ws: WebSocket, request) => {
         break;
       }
 
+      case "VISIBILITY": {
+        if (!client) return;
+        if (data.visible === false) {
+          if (!hiddenSince.has(client)) hiddenSince.set(client, Date.now());
+        } else if (hiddenSince.has(client)) {
+          hiddenSince.delete(client);
+          void markRoomRead(client.userId, client.room); // looking again: read
+        }
+        break;
+      }
+
       case "TYPING": {
         if (!client) return;
         broadcast(
@@ -350,8 +366,9 @@ wss.on("connection", (ws: WebSocket, request) => {
 
         const oldRoom = client.room;
         // Leaving a room means everything in it was seen; entering one reads it.
-        void markRoomRead(client.userId, oldRoom);
-        void markRoomRead(client.userId, newRoom);
+        // (up to when the tab was hidden, if it is)
+        void markRoomRead(client.userId, oldRoom, readAt(client));
+        void markRoomRead(client.userId, newRoom, readAt(client));
         leaveRoom(oldRoom, client.id);
         broadcast(oldRoom, {
           type: "USER_LEFT",
@@ -532,7 +549,7 @@ wss.on("connection", (ws: WebSocket, request) => {
     }
     if (!client) return;
     activeClients.delete(client);
-    void markRoomRead(client.userId, client.room);
+    void markRoomRead(client.userId, client.room, readAt(client));
     leaveRoom(client.room, client.id);
     broadcast(client.room, {
       type: "USER_LEFT",
