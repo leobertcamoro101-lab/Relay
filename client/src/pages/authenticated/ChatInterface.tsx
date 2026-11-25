@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth-context";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { useConversations } from "../../hooks/useConversations";
+import { useUnreadTitle } from "../../hooks/useUnreadTitle";
 import MessageInput from "../authenticated/MessageInput";
 import MessageList from "../authenticated/MessageList";
 import Sidebar from "./Sidebar";
@@ -77,6 +78,7 @@ function ChatInterface() {
   }, [unreadRooms, conversations, refreshConversations]);
 
   const hasUnread = Object.keys(unreadRooms).length > 0;
+  useUnreadTitle(unreadRooms); // "(3) Relay" in the browser tab
 
   // A reply target belongs to one room — drop it when the room changes.
   useEffect(() => {
