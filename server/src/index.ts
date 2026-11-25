@@ -213,7 +213,7 @@ wss.on("connection", (ws: WebSocket, request) => {
 
       let decoded: { userId: string; email: string };
       try {
-        decoded = jwt.verify(token, process.env.JWT_KEY as string) as { userId: string; email: string };
+        decoded = jwt.verify(token, process.env.JWT_KEY as string, { algorithms: ["HS256"] }) as { userId: string; email: string };
       } catch {
         ws.close(4001, "Authentication failed");
         return;

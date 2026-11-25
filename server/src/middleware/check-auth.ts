@@ -28,7 +28,7 @@ export default (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!token) {
       throw new Error("Authentication failed!");
     }
-    const decodeToken = jwt.verify(token, process.env.JWT_KEY as string) as DecodedToken;
+    const decodeToken = jwt.verify(token, process.env.JWT_KEY as string, { algorithms: ["HS256"] }) as DecodedToken;
     req.userData = { userId: decodeToken.userId };
     next();
   } catch (err) {

@@ -7,6 +7,7 @@ import sendResetPasswordEmail from "../util/brevo-email.js";
 import { deleteCloudinaryImage, extractPublicId } from "../util/cloudinary-cleanup.js";
 import HttpError from "../models/http-error.js";
 import logger from "../util/logger.js";
+import { escapeRegex } from "../util/escape-regex.js";
 import User from "../models/user.js";
 import { AuthRequest } from "../middleware/check-auth.js";
 
@@ -41,22 +42,29 @@ const getUserById = async (req: AuthRequest, res: Response, next: NextFunction) 
 };
 
 const searchUsers = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  const query = ((req.query.q as string) || "").trim();
+  // ?q= can arrive as an array or object (?q[a]=1), so only accept a string;
+  // cap the length so a huge pattern can't be used to slow the query down.
+  const rawQuery = typeof req.query.q === "string" ? req.query.q : "";
+  const query = rawQuery.trim().slice(0, 50);
   if (!query) {
     return res.json({ users: [] });
   }
+  // User input is matched as plain text, never as a regular expression.
+  const pattern = escapeRegex(query);
 
   let users;
   try {
     users = await User.find({
       _id: { $ne: req.userData?.userId }, // don't return yourself
       $or: [
-        { firstName: { $regex: query, $options: "i" } },
-        { lastName: { $regex: query, $options: "i" } },
-        { email: { $regex: query, $options: "i" } },
+        { firstName: { $regex: pattern, $options: "i" } },
+        { lastName: { $regex: pattern, $options: "i" } },
+        { email: { $regex: pattern, $options: "i" } },
       ],
     })
-      .select("-password")
+      // Only what the people-picker shows. Never email, birthday, gender or
+      // the reset-token fields of other users.
+      .select("firstName lastName image")
       .limit(10);
   } catch (err) {
     logger.error({ err }, "Search users failed");
