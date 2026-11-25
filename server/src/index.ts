@@ -12,7 +12,6 @@
 // ============================================
 import "./instrument.js";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
 import User from "./models/user.js";
 import "dotenv/config";
 import http from "node:http";
@@ -31,9 +30,10 @@ import {
   canJoinRoom,   // NEW
 } from "./state.js";
 import { connectDB } from "./db.js";
-import { deleteAttachmentFile } from "./util/attachment-cleanup.js";
+import { deleteAttachmentFile, parseCloudinaryUrl } from "./util/attachment-cleanup.js";
 import { isAllowedReaction, normalizeReactions } from "./util/reactions.js";
 import { buildReplySnapshot, isValidMessageId } from "./util/reply.js";
+import { cleanString } from "./util/clean-string.js";
 import { getUnreadRecipients } from "./util/unread.js";
 import { getUnreadSnapshot, markRoomRead } from "./models/read-state.js";
 import app from "./app.js";
@@ -64,19 +64,20 @@ function getClientIp(request: http.IncomingMessage): string {
 const MAX_CONNECTIONS_PER_IP = 20; // raise if you want to raise the limit
 const connectionsByIp = new Map<string, number>();
 
-// NEW — validates the shape of an attachment the client claims to be
-// sending with a MESSAGE. This does NOT verify the url actually came from
-// our own POST /api/upload — a client could in principle send any external
-// URL here, the same way they already could by pasting a link as plain
-// text. What this guards against is a malformed/oversized payload corrupting
-// the DB write or rendering strangely in the UI, not a client lying about
-// where a file is hosted.
+// Validates an attachment a client claims to be sending with a MESSAGE or an
+// edit: well-formed, not oversized, and the url must be a file in OUR Cloudinary
+// account's relay/attachments folder (what POST /api/upload returns). An
+// arbitrary external link is rejected, so a message can't carry a tracking
+// image, a phishing "file" or a javascript: URL in an attachment card.
 function sanitizeAttachment(attachment: unknown): Attachment | undefined {
   if (!attachment || typeof attachment !== "object") return undefined;
   const { url, name, type, size } = attachment as Record<string, unknown>;
 
   if (
     typeof url !== "string" || url.length === 0 || url.length > 2000 ||
+    // must be a file our own upload route put in our Cloudinary folder, never
+    // an arbitrary external link (tracking pixel, phishing "file", javascript:)
+    parseCloudinaryUrl(url) === null ||
     typeof name !== "string" || name.length === 0 ||
     typeof type !== "string" || type.length === 0 || type.length > 100 ||
     typeof size !== "number" || !Number.isFinite(size) || size < 0
@@ -137,6 +138,12 @@ const server = http.createServer(app);
 // file's actual bytes, so 64KB stays plenty even with attachments.
 const wss = new WebSocketServer({ server, maxPayload: 64 * 1024 });
 
+// Last line of defence: log a bug in a handler instead of letting one bad
+// frame take the whole server (and every connected user) down.
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+});
+
 wss.on("error", (err) => {
   console.error("WebSocketServer error:", err);
 });
@@ -196,12 +203,13 @@ wss.on("connection", (ws: WebSocket, request) => {
     } catch {
       return; // ignore malformed frames
     }
+    if (!data || typeof data !== "object") return; // e.g. the JSON text "null" or 5
 
     switch (data.type) {
       case "JOIN": {
       const token = data.token;
-      const room = data.room?.trim().slice(0, 100) || DEFAULT_ROOM;
-      if (!token) return;
+      const room = cleanString(data.room, 100) || DEFAULT_ROOM;
+      if (!token || typeof token !== "string") return;
 
       let decoded: { userId: string; email: string };
       try {
@@ -285,7 +293,7 @@ wss.on("connection", (ws: WebSocket, request) => {
 
       case "MESSAGE": {
         if (!client) return;
-        const text = data.text?.trim().slice(0, 500) ?? "";
+        const text = cleanString(data.text, 500);
         // NEW — a message can now be an attachment with no caption at all,
         // so the old "!text -> return" guard would silently drop those.
         const attachment = sanitizeAttachment(data.attachment);
@@ -360,7 +368,7 @@ wss.on("connection", (ws: WebSocket, request) => {
 
       case "SWITCH_ROOM": {
         if (!client) return;
-        const newRoom = data.room?.trim().slice(0, 100);
+        const newRoom = cleanString(data.room, 100);
         if (!newRoom || newRoom === client.room) return;
         if (!canJoinRoom(newRoom, client.userId)) return; // NEW — silently ignore, don't leak that the room exists
 
@@ -413,8 +421,8 @@ wss.on("connection", (ws: WebSocket, request) => {
       }
       case "EDIT_MESSAGE": {
         if (!client) return;
-        if (!data.id || !mongoose.isValidObjectId(data.id)) return;
-        const text = (data.text ?? "").trim().slice(0, 500);
+        if (!isValidMessageId(data.id)) return;
+        const text = cleanString(data.text, 500);
 
         // undefined -> keep, null -> remove, object -> replace (must be valid)
         const rawAttachment = data.attachment;
@@ -475,7 +483,7 @@ wss.on("connection", (ws: WebSocket, request) => {
 
       case "TOGGLE_REACTION": {
         if (!client) return;
-        if (!data.id || !mongoose.isValidObjectId(data.id)) return;
+        if (!isValidMessageId(data.id)) return;
         if (!isAllowedReaction(data.emoji)) return;
         const emoji = data.emoji;
 
@@ -516,7 +524,7 @@ wss.on("connection", (ws: WebSocket, request) => {
 
       case "DELETE_MESSAGE": {
         if (!client) return;
-        if (!data.id || !mongoose.isValidObjectId(data.id)) return;
+        if (!isValidMessageId(data.id)) return;
 
         let deleted;
         try {
