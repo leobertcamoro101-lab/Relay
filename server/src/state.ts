@@ -1,6 +1,7 @@
 import type { WebSocket } from 'ws';
 import type { User } from './types.js';
 import { parseDMRoomId } from './util/dmRoom.js';
+import { PUBLIC_ROOMS } from './util/read-state.js';
 
 export interface ClientState {
   ws: WebSocket;
@@ -50,12 +51,14 @@ export function getRoomOnlineCount(room: string): number {
   return getRoomUsers(room).length;
 }
 
-// Public/group rooms (e.g. "general") are open to anyone. A DM room's id
-// itself encodes its two participants (see util/dmRoom.ts), so we can
-// authorize a JOIN/SWITCH_ROOM synchronously just by checking the
+// The fixed public rooms (PUBLIC_ROOMS) are open to any logged-in user. A DM
+// room's id itself encodes its two participants (see util/dmRoom.ts), so we
+// can authorize a JOIN/SWITCH_ROOM synchronously just by checking the
 // requesting user's id is one of the two — no DB lookup needed.
+// Any other room name is refused: otherwise a client could invent unlimited
+// rooms (filling the database) and send fake unread pings to everyone.
 export function canJoinRoom(room: string, userId: string): boolean {
   const participants = parseDMRoomId(room);
-  if (!participants) return true;
+  if (!participants) return PUBLIC_ROOMS.includes(room);
   return participants.includes(userId);
 }

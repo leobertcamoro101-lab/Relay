@@ -34,6 +34,7 @@ import { deleteAttachmentFile, parseCloudinaryUrl } from "./util/attachment-clea
 import { isAllowedReaction, normalizeReactions } from "./util/reactions.js";
 import { buildReplySnapshot, isValidMessageId } from "./util/reply.js";
 import { cleanString } from "./util/clean-string.js";
+import { isSessionCurrent } from "./util/session.js";
 import { getUnreadRecipients } from "./util/unread.js";
 import { getUnreadSnapshot, markRoomRead } from "./models/read-state.js";
 import app from "./app.js";
@@ -211,7 +212,7 @@ wss.on("connection", (ws: WebSocket, request) => {
       const room = cleanString(data.room, 100) || DEFAULT_ROOM;
       if (!token || typeof token !== "string") return;
 
-      let decoded: { userId: string; email: string };
+      let decoded: { userId: string; email: string; pv?: string };
       try {
         decoded = jwt.verify(token, process.env.JWT_KEY as string, { algorithms: ["HS256"] }) as { userId: string; email: string };
       } catch {
@@ -226,7 +227,8 @@ wss.on("connection", (ws: WebSocket, request) => {
         ws.close(4001, "Authentication failed");
         return;
       }
-      if (!user) {
+      if (!user || !isSessionCurrent(decoded.pv, user.password)) {
+        // unknown user, or the password changed after this token was issued
         ws.close(4001, "Authentication failed");
         return;
       }

@@ -62,12 +62,18 @@ const ChangePassword = () => {
           {submitted ? (
             <div className="text-center py-2 space-y-4">
               <p className="text-relay-online text-sm font-medium">Password updated successfully.</p>
+              {/* Changing the password ends every existing session (the server
+                  rejects tokens made for the old password), this one included,
+                  so send the user back to log in with the new one. */}
+              <p className="text-relay-ink-subtle text-sm">
+                For your security you've been signed out everywhere. Please log in with your new password.
+              </p>
               <button
-                onClick={() => navigate("/profile")}
+                onClick={() => auth.logout()}
                 className="w-full bg-relay-accent hover:bg-relay-accent-ink text-white
                            font-bold py-3 rounded-xl transition-colors"
               >
-                Back to Profile →
+                Log in again →
               </button>
             </div>
           ) : (

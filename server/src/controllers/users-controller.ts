@@ -8,6 +8,7 @@ import { deleteCloudinaryImage, extractPublicId } from "../util/cloudinary-clean
 import HttpError from "../models/http-error.js";
 import logger from "../util/logger.js";
 import { escapeRegex } from "../util/escape-regex.js";
+import { passwordVersion } from "../util/session.js";
 import User from "../models/user.js";
 import { AuthRequest } from "../middleware/check-auth.js";
 
@@ -125,7 +126,7 @@ const signup = async (req: AuthRequest, res: Response, next: NextFunction) => {
   let token;
   try {
     token = jwt.sign(
-      { userId: createdUser.id, email: createdUser.email },
+      { userId: createdUser.id, email: createdUser.email, pv: passwordVersion(hashedPassword) },
       process.env.JWT_KEY as string,
       { expiresIn: "1h" }
     );
@@ -177,7 +178,7 @@ const login = async (req: AuthRequest, res: Response, next: NextFunction) => {
   let token;
   try {
     token = jwt.sign(
-      { userId: existingUser.id, email: existingUser.email },
+      { userId: existingUser.id, email: existingUser.email, pv: passwordVersion(existingUser.password) },
       process.env.JWT_KEY as string,
       { expiresIn: "1h" }
     );

@@ -1,10 +1,32 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import { WebSocket } from "ws";
 import type { AddressInfo } from "node:net";
 import { server } from "../../src/index.js";
 import Message from "../../src/models/messages.js";
 import { getDMRoomId } from "../../src/util/dmRoom.js";
 import { createTestUser, tokenFor } from "../helpers/factories.js";
+
+// The server only lets people join the fixed public rooms (PUBLIC_ROOMS) and
+// DMs, so a client can't invent rooms. These tests want a separate room each so
+// they can't see each other's messages, so those rooms are added to the allowed
+// list for this file only — the real list and canJoinRoom are untouched.
+vi.mock("../../src/util/read-state.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/util/read-state.js")>();
+  return {
+    ...actual,
+    PUBLIC_ROOMS: [
+      ...actual.PUBLIC_ROOMS,
+      "test-room-broadcast",
+      "test-room-two-tabs",
+      "test-room-edit",
+      "test-room-malformed",
+      "test-room-typing",
+      "test-room-delete",
+      "test-room-old",
+      "test-room-new",
+    ],
+  };
+});
 
 let baseUrl: string;
 const openSockets: WebSocket[] = [];
@@ -110,7 +132,7 @@ describe("WebSocket chat behavior", () => {
   it("broadcasts a MESSAGE to everyone in the room", async () => {
     const { user: alice } = await createTestUser();
     const { user: bob } = await createTestUser();
-    const room = `test-room-${Date.now()}`;
+    const room = "test-room-broadcast";
 
     const aliceWs = await connect();
     aliceWs.send(JSON.stringify({ type: "JOIN", token: tokenFor(alice), room }));
@@ -132,7 +154,7 @@ describe("WebSocket chat behavior", () => {
 
   it("does not double-count the same person's online status across two tabs (duplicate-online-users regression)", async () => {
     const { user: alice } = await createTestUser();
-    const room = `test-room-${Date.now()}`;
+    const room = "test-room-two-tabs";
 
     const tab1 = await connect();
     tab1.send(JSON.stringify({ type: "JOIN", token: tokenFor(alice), room }));
@@ -151,7 +173,7 @@ describe("WebSocket chat behavior", () => {
   it("only lets the author edit their own message", async () => {
     const { user: alice } = await createTestUser();
     const { user: bob } = await createTestUser();
-    const room = `test-room-${Date.now()}`;
+    const room = "test-room-edit";
 
     const aliceWs = await connect();
     aliceWs.send(JSON.stringify({ type: "JOIN", token: tokenFor(alice), room }));
@@ -176,7 +198,7 @@ describe("WebSocket chat behavior", () => {
 
   it("silently ignores EDIT_MESSAGE with a malformed id instead of crashing", async () => {
     const { user: alice } = await createTestUser();
-    const room = `test-room-${Date.now()}`;
+    const room = "test-room-malformed";
 
     const aliceWs = await connect();
     aliceWs.send(JSON.stringify({ type: "JOIN", token: tokenFor(alice), room }));
@@ -192,7 +214,7 @@ describe("WebSocket chat behavior", () => {
   it("broadcasts TYPING to others in the room, not back to the sender", async () => {
     const { user: alice } = await createTestUser();
     const { user: bob } = await createTestUser();
-    const room = `test-room-${Date.now()}`;
+    const room = "test-room-typing";
 
     const aliceWs = await connect();
     aliceWs.send(JSON.stringify({ type: "JOIN", token: tokenFor(alice), room }));
@@ -215,7 +237,7 @@ describe("WebSocket chat behavior", () => {
   it("only lets the author delete their own message, and broadcasts the deletion", async () => {
     const { user: alice } = await createTestUser();
     const { user: bob } = await createTestUser();
-    const room = `test-room-${Date.now()}`;
+    const room = "test-room-delete";
 
     const aliceWs = await connect();
     aliceWs.send(JSON.stringify({ type: "JOIN", token: tokenFor(alice), room }));
@@ -249,8 +271,8 @@ describe("room switching", () => {
   it("leaves the old room (broadcasting USER_LEFT) and joins the new one (with its own history)", async () => {
     const { user: alice } = await createTestUser();
     const { user: bob } = await createTestUser();
-    const oldRoom = `old-room-${Date.now()}`;
-    const newRoom = `new-room-${Date.now()}`;
+    const oldRoom = "test-room-old";
+    const newRoom = "test-room-new";
 
     const aliceWs = await connect();
     aliceWs.send(JSON.stringify({ type: "JOIN", token: tokenFor(alice), room: oldRoom }));
