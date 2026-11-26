@@ -10,6 +10,7 @@ import usersRoutes from './routes/users-routes.js';
 import conversationsRoutes from './routes/conversations-routes.js';
 import uploadRoutes from './routes/upload-routes.js'; // NEW
 import HttpError from './models/http-error.js';
+import { toErrorResponse } from "./util/error-response.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -91,7 +92,9 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
     return next(error);
   }
 
-  const status = error.code || 500;
+  // What the client sees: the message only for user-facing errors, a generic
+  // one for everything else (see util/error-response.ts).
+  const { status, message } = toErrorResponse(error);
 
   // Log every server-side error with useful request context. Client
   // errors (4xx — bad input, auth failures, not found) are expected,
@@ -106,7 +109,7 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
   }
 
   res.status(status);
-  res.json({ message: error.message || "An unknown error occurred" });
+  res.json({ message });
 });
 
 export default app;

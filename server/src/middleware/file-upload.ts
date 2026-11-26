@@ -29,7 +29,7 @@ export const upload = multer({
     if (isValid) {
       cb(null, true);
     } else {
-      cb(new Error("Invalid file type. Only PNG/JPG allowed."));
+      cb(new HttpError("Invalid file type. Only PNG/JPG allowed.", 422));
     }
   },
 });
@@ -96,7 +96,7 @@ export const uploadAttachmentFile = multer({
     if (ATTACHMENT_MIME_TYPES.has(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Unsupported file type."));
+      cb(new HttpError("Unsupported file type.", 422));
     }
   },
 });

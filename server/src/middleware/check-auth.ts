@@ -9,6 +9,7 @@ export interface AuthRequest extends Request {
     userId: string;
   };
   validationError?: string; // ← add this line for Zod
+  currentPassword?: string; // taken out of the body before Zod, see extract-current-password.ts
 }
 
 interface DecodedToken {

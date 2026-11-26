@@ -9,6 +9,7 @@ import HttpError from "../models/http-error.js";
 import logger from "../util/logger.js";
 import { escapeRegex } from "../util/escape-regex.js";
 import { passwordVersion } from "../util/session.js";
+import { isResetCoolingDown, RESET_TOKEN_TTL_MS } from "../util/reset-cooldown.js";
 import User from "../models/user.js";
 import { AuthRequest } from "../middleware/check-auth.js";
 
@@ -215,11 +216,17 @@ const forgotPassword = async (req: AuthRequest, res: Response, next: NextFunctio
     return res.json({ message: "If that email exists, a reset link has been sent." });
   }
 
+  // A reset email went out to this account moments ago: answer the same way
+  // but don't send (or replace the token with) another one.
+  if (isResetCoolingDown(existingUser.resetPasswordExpires)) {
+    return res.json({ message: "If that email exists, a reset link has been sent." });
+  }
+
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
 
   existingUser.resetPasswordToken = hashedToken;
-  existingUser.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
+  existingUser.resetPasswordExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
 
   try {
     await existingUser.save();
@@ -311,6 +318,23 @@ const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction
   }
 
   if (email && email !== user.email) {
+    // The email is how a lost password gets reset, so changing it needs the
+    // current password. Otherwise a stolen login token could swap the email and
+    // then take the account over for good through "forgot password". Checked
+    // before the "already in use" lookup so it can't be used to probe emails.
+    let passwordOk = false;
+    if (req.currentPassword) {
+      try {
+        passwordOk = await bcrypt.compare(req.currentPassword, user.password);
+      } catch (err) {
+        logger.error({ err }, "Update profile failed");
+      }
+    }
+    if (!passwordOk) {
+      await deleteCloudinaryImage(req.file?.cloudinaryPublicId);
+      return next(new HttpError("Enter your current password to change your email.", 401));
+    }
+
     let existingEmailUser;
     try {
       existingEmailUser = await User.findOne({ email });

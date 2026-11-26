@@ -1,6 +1,7 @@
 import express from "express";
 import checkAuth from "../middleware/check-auth.js";
 import { uploadAttachmentFile, pipeAttachmentToCloudinary } from "../middleware/file-upload.js";
+import { uploadLimiter } from "../middleware/rate-limits.js";
 import { uploadAttachment } from "../controllers/upload-controller.js";
 
 const router = express.Router();
@@ -11,6 +12,7 @@ const router = express.Router();
 router.post(
   "/",
   checkAuth,
+  uploadLimiter,
   uploadAttachmentFile.single("file"),
   pipeAttachmentToCloudinary,
   uploadAttachment

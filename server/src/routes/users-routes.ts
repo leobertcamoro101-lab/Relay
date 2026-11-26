@@ -6,6 +6,8 @@ import rateLimit from "express-rate-limit";
 import * as usersController from "../controllers/users-controller.js";
 import { upload, uploadToCloudinary } from "../middleware/file-upload.js";
 import checkAuth from "../middleware/check-auth.js";
+import extractCurrentPassword from "../middleware/extract-current-password.js";
+import { uploadLimiter } from "../middleware/rate-limits.js";
 
 const router = express.Router();
 
@@ -47,8 +49,10 @@ router.get("/:uid", usersController.getUserById);
 
 router.patch(
   "/:uid",
+  uploadLimiter,
   upload.single("image"),
   uploadToCloudinary,
+  extractCurrentPassword, // before Zod: only needed when the email is changing
   [
     validateBody(updateProfileSchema),
   ],

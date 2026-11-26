@@ -18,14 +18,21 @@ const EditProfile = () => {
   const { isLoading, error, sendRequest } = useHttpClient();
   const [serverError, setServerError] = useState<string | null>(null);
   const [currentImage, setCurrentImage] = useState<string | undefined>(undefined);
+  // The email as saved on the server. Changing it needs the current password,
+  // so the password field only appears once the email differs from this.
+  const [savedEmail, setSavedEmail] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<EditProfileInfo>({ resolver: zodResolver(editProfileSchema) });
+
+  const emailChanged = savedEmail !== null && (watch("email") ?? "").trim() !== savedEmail;
 
   // Pre-fill the form with the current profile
   useEffect(() => {
@@ -45,6 +52,7 @@ const EditProfile = () => {
           email: responseData.user.email,
         });
         setCurrentImage(responseData.user.image);
+        setSavedEmail(responseData.user.email);
       } catch {
         // error already captured by useHttpClient's error state
       }
@@ -55,12 +63,18 @@ const EditProfile = () => {
   const onSubmit = async (data: EditProfileInfo) => {
     setServerError(null);
 
+    if (emailChanged && !currentPassword) {
+      setServerError("Enter your current password to change your email.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("firstName", data.firstName);
     formData.append("lastName", data.lastName);
     formData.append("birthday", data.birthday);
     formData.append("gender", data.gender);
     formData.append("email", data.email);
+    if (emailChanged) formData.append("currentPassword", currentPassword);
 
     const file = fileInputRef.current?.files?.[0];
     if (file) formData.append("image", file);
@@ -166,6 +180,18 @@ const EditProfile = () => {
                 autoComplete="email"
               />
             </FormField>
+
+            {emailChanged && (
+              <FormField label="Current password" hint="Needed to change your email address.">
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className={inputClass(false)}
+                  autoComplete="current-password"
+                />
+              </FormField>
+            )}
 
             <button
               type="submit"
