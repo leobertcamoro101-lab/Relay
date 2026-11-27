@@ -29,6 +29,25 @@ export function leaveRoom(room: string, connectionId: string): void {
   if (members.size === 0) rooms.delete(room);
 }
 
+// Close every open connection a user has (all tabs, all rooms). Used when their
+// password changes or is reset, so a session started with the old password
+// can't keep going. The client treats 4001 as "log in again".
+export function closeUserConnections(userId: string, code = 4001, reason = "Signed out"): number {
+  let closed = 0;
+  for (const members of [...rooms.values()]) {
+    for (const member of [...members.values()]) {
+      if (member.userId !== userId) continue;
+      try {
+        member.ws.close(code, reason);
+      } catch {
+        // already closing — the close handler will clean up
+      }
+      closed++;
+    }
+  }
+  return closed;
+}
+
 export function getRoomMembers(room: string): ClientState[] {
   return [...(rooms.get(room)?.values() ?? [])];
 }

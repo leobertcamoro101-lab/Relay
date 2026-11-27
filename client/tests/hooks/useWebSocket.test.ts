@@ -82,7 +82,7 @@ describe("useWebSocket", () => {
 
     expect(result.current.status).toBe("connected");
     expect(latestSocket().sent).toEqual([
-      JSON.stringify({ type: "JOIN", token: "tok", room: "general" }),
+      JSON.stringify({ type: "JOIN", token: "tok", room: "general", hidden: false }),
     ]);
   });
 
@@ -278,7 +278,7 @@ describe("useWebSocket", () => {
     act(() => result.current.deleteMessage("m1"));
 
     expect(latestSocket().sent).toEqual([
-      JSON.stringify({ type: "JOIN", token: "tok", room: "general" }),
+      JSON.stringify({ type: "JOIN", token: "tok", room: "general", hidden: false }),
       JSON.stringify({ type: "MESSAGE", text: "hello" }),
       JSON.stringify({ type: "TYPING", isTyping: true }),
       JSON.stringify({ type: "SWITCH_ROOM", room: "tech" }),

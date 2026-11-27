@@ -79,7 +79,7 @@ export const useWebSocket = () => {
   ws.onopen = () => {
     if (wsRef.current !== ws) return; // a newer connection already replaced this one
     setStatus("connected");
-    ws.send(JSON.stringify({ type: "JOIN", token, room }));
+    ws.send(JSON.stringify({ type: "JOIN", token, room, hidden: document.hidden }));
   };
 
   ws.onmessage = (event: MessageEvent) => {

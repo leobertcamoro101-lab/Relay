@@ -91,16 +91,54 @@ A room or DM that gets a message while you are looking at a different room shows
 - On JOIN the server adds `unread` and `activity` to the `WELCOME` message (`getUnreadSnapshot`; it is not a separate message, so nothing arrives between WELCOME and the next event, which the websocket tests rely on): for the public rooms plus the user's DMs (matched by `dmRoomPattern`) it computes each room's newest message time and counts other people's messages newer than `lastReadAt` (counts capped at 99, never for the room you're in). The client replaces `unreadRooms` with it and merges `activity` (max per room), so the sidebar is sorted by recent activity from the first render.
 - `PUBLIC_ROOMS` in `server/src/util/read-state.ts` must match `ROOMS` in `Sidebar.tsx`.
 - A room with no read marker counts as read up to `UNREAD_START` (a constant in `util/read-state.ts`), otherwise the first deploy would flag all existing history as unread. A brand-new DM sent after that date still shows as unread. Move the constant if you ever backfill.
+- "Read" means the room was open on the socket, not that the tab was focused or scrolled to the bottom.
 - Joining a room counts as reading it, so a refresh must put you back in the room you were in, otherwise #general would be marked read on every reload. `client/src/utils/lastRoom.ts` keeps the current room in `sessionStorage` (per tab); `ChatInterface` saves it once connected (clears it when you're in the default room) and connects with `getLastRoom() ?? "general"`, both on first load and on automatic reconnects. `useWebSocket` clears it when the server closes the socket with 4001 or 4003 so a bad remembered room can't cause a reconnect loop.
 
 **Hidden tabs (added 2026-11-25)**
 - "Read" means the room is open on the socket **and the tab is visible** (`document.hidden` is false). Window focus doesn't matter, so a visible window beside another one still counts as reading.
 - The client sends `VISIBILITY { visible }` on `visibilitychange`, and right after WELCOME if the tab is already hidden. The server keeps `hiddenSince` (a `WeakMap` per connection in `index.ts`). While a connection is hidden, `getUnreadRecipients` (its optional `isHidden` argument) pings it for its own open room too, and `markRoomRead` on switch/close uses the hidden-since time (`readAt`) instead of now, so messages that arrived while hidden stay unread after a refresh or logout. Becoming visible again marks the room read.
-- On the client, `UNREAD` for the open room is counted only while `document.hidden`; the open room's dot is cleared as soon as the tab is visible again.
-- Not handled: a tab that is hidden at the moment it connects (refresh of a background tab) marks the room read on JOIN, before it reports `VISIBILITY false`.
+- On the client, `UNREAD` for the open room is counted only while `document.hidden`; the open room's dot is cleared as soon as the tab is visible again. So the dot for a hidden tab can't be seen by looking at the tab (it clears the moment you return); test it by closing the hidden tab and logging in again, where that room should show a dot.
+- A tab that connects while already hidden (refreshing a background tab) says so in the `JOIN` frame (`hidden: true`). The server then sets `hiddenSince` to `0` and skips the JOIN-time `markRoomRead`, so the saved read marker doesn't move until the tab is shown (then `VISIBILITY true` marks it read). Messages that arrive meanwhile ping it as `UNREAD`.
+
+**Browser tab title (added 2026-11-25)**
+- `client/src/hooks/useUnreadTitle.ts`, called from `ChatInterface`, puts the total unread count (all rooms and DMs, shown as `99+` above 99) in front of the page title, e.g. `(3) relay`, whenever anything is unread — not only while the tab is hidden — so you can see it from another tab. It keeps whatever title the page already has, never stacks prefixes, and restores the title at 0 and on unmount.
 
 **Sidebar**
 - `Sidebar` takes optional `unread` and `activity` props: rooms and DMs are sorted newest-activity first (stable, so ones with no activity keep their default order below). The dot also appears next to the person in the Online list if you have a DM with them, and on the mobile menu button when anything is unread.
 - If someone starts a DM with you, `ChatInterface` re-fetches the DM list once (`refreshConversations` from `useConversations`) because the room pings (or the snapshot lists it) before it is in the DM list.
 
-**Tests**: `server/tests/util/unread.test.ts`, `server/tests/util/read-state.test.ts` (the counting logic; the Mongo queries themselves aren't covered by a test), `client/tests/components/Sidebar-unread.test.tsx`, `client/tests/hooks/useWebSocket-unread.test.tsx`, `client/tests/hooks/useWebSocket-visibility.test.tsx`, `client/tests/utils/lastRoom.test.ts`, `client/tests/hooks/useWebSocket-lastRoom.test.tsx`.
+**Tests**: `server/tests/util/unread.test.ts`, `server/tests/util/read-state.test.ts` (the counting logic; the Mongo queries themselves aren't covered by a test), `client/tests/components/Sidebar-unread.test.tsx`, `client/tests/hooks/useWebSocket-unread.test.tsx`, `client/tests/hooks/useWebSocket-visibility.test.tsx`, `client/tests/hooks/useUnreadTitle.test.tsx`, `client/tests/utils/lastRoom.test.ts`, `client/tests/hooks/useWebSocket-lastRoom.test.tsx`.
+
+---
+Convention: Security hardening (added 2026-11-27)
+---
+
+Result of a security review. Keep these rules when changing the server.
+
+**WebSocket input (`server/src/index.ts`)**
+- Every field of an incoming frame is untyped. An async `ws.on("message")` listener that throws becomes an unhandled rejection and kills the Node process, so frames that aren't objects are ignored and strings go through `cleanString(value, max)` (`util/clean-string.ts`, returns a trimmed, capped string or `""`). Message ids go through `isValidMessageId` before any DB call. A `process.on("unhandledRejection")` logger is the last safety net.
+- `jwt.verify` is pinned to `algorithms: ["HS256"]` (socket JOIN and `middleware/check-auth.ts`).
+
+**Rooms**
+- `canJoinRoom` (`state.ts`) allows only DM participants or a room in `PUBLIC_ROOMS` (`util/read-state.ts`, must match `ROOMS` in `Sidebar.tsx`). Any other room name is refused, so nobody can invent a room. `tests/websocket/chat.test.ts` mocks `PUBLIC_ROOMS` to add its `test-room-*` names; a new test room name needs adding there.
+
+**Attachments**
+- `sanitizeAttachment` requires `parseCloudinaryUrl(url) !== null`: https, `res.cloudinary.com`, our cloud name (when `CLOUDINARY_CLOUD_NAME` is set) and a path under `relay/attachments/`. Anything else is dropped.
+
+**User search**
+- `searchUsers` escapes the query (`util/escape-regex.ts`) and returns only the fields the sidebar needs, not the whole user document.
+
+**Sessions**
+- Login/signup tokens carry `pv = sha256(passwordHash).slice(0,16)` (`util/session.ts`). `check-auth` (async) and socket JOIN compare it with the user's current password, so changing or resetting a password invalidates every older token. Tokens without `pv` are accepted until their 1 h expiry and skip the DB lookup. Changing or resetting a password also closes every open socket of that user with 4001 (`closeUserConnections` in `state.ts`, called from `changePassword` and `resetPassword`); the client treats 4001 as "log in again". `ChangePassword.tsx` tells the user they were signed out everywhere and logs them out.
+
+**Email change needs the current password**
+- `EditProfile.tsx` shows a "Current password" field only when the email differs from the saved one. The PATCH `/api/users/:uid` chain runs `extractCurrentPassword` (`middleware/extract-current-password.ts`) after multer: it moves `currentPassword` out of the body into `req.currentPassword`, so it is never validated or logged with the profile fields. `updateProfile` then `bcrypt.compare`s it and returns 401 "Enter your current password to change your email." on a missing or wrong password, deleting the avatar that was just uploaded. This check runs before the "email already in use" check.
+
+**Rate limits**
+- `middleware/rate-limits.ts` `uploadLimiter`: 30 requests per 10 minutes per IP on `POST /upload` and on avatar upload (PATCH `/api/users/:uid`). Relaxed to 1000 when `NODE_ENV === "test"`.
+- Forgot-password already had a per-IP limit (5/hour). It also has a per-account cooldown (`util/reset-cooldown.ts`, 60 s, derived from the reset token expiry minus `RESET_TOKEN_TTL_MS`): inside the cooldown it returns the same generic "If that email exists…" response and sends no email.
+
+**Error responses**
+- The error handler in `app.ts` uses `toErrorResponse` (`util/error-response.ts`). `HttpError` keeps its message and status; multer errors become 413 ("That file is too large.") or 400; body-parser 4xx become "Invalid request."; everything else is a 500 "Something went wrong, please try again later." (still logged, and sent to Sentry for 5xx). Throw `HttpError` for anything the user should see. File-type rejections in `middleware/file-upload.ts` are `HttpError` 422.
+
+**Tests**: `server/tests/util/{clean-string,escape-regex,session,room-access,error-response,reset-cooldown,extract-current-password}.test.ts`, `server/tests/websocket/chat.test.ts`. API tests for the routes are in `server/tests/api/security-hardening.test.ts` (email change needs the password, 422 on bad file types, forgot-password cooldown). `tests/security/upload-rate-limit.test.ts` covers the upload limiter (it sets `UPLOAD_LIMIT_MAX=2` before importing the app; the limiter reads it once at import, otherwise it is 1000 under `NODE_ENV=test`). `tests/util/close-connections.test.ts` and `tests/websocket/session-and-visibility.test.ts` cover closing sockets on password change and the hidden-join ping.

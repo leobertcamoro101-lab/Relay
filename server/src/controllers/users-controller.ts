@@ -11,6 +11,7 @@ import { escapeRegex } from "../util/escape-regex.js";
 import { passwordVersion } from "../util/session.js";
 import { isResetCoolingDown, RESET_TOKEN_TTL_MS } from "../util/reset-cooldown.js";
 import User from "../models/user.js";
+import { closeUserConnections } from "../state.js";
 import { AuthRequest } from "../middleware/check-auth.js";
 
 // A bcrypt hash for a password nobody actually has. Used to burn the same
@@ -283,6 +284,7 @@ const resetPassword = async (req: AuthRequest, res: Response, next: NextFunction
     return next(new HttpError("Could not reset password, please try again.", 500));
   }
 
+  closeUserConnections(existingUser.id, 4001, "Password changed");
   logger.info({ userId: existingUser.id }, "Password reset completed");
   res.json({ message: "Password has been reset successfully." });
 };
@@ -432,6 +434,8 @@ const changePassword = async (req: AuthRequest, res: Response, next: NextFunctio
     return next(new HttpError("Could not update password, please try again.", 500));
   }
 
+  // Sign out every open tab; the new password issues new tokens at next login.
+  closeUserConnections(user.id, 4001, "Password changed");
   res.json({ message: "Password updated successfully." });
 };
 

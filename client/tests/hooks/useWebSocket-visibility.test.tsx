@@ -83,3 +83,23 @@ describe("telling the server", () => {
     expect(sent()).toContainEqual({ type: "VISIBILITY", visible: false });
   });
 });
+
+describe("JOIN reports whether the tab is hidden", () => {
+  const joinFrame = () => sent().find((m) => m.type === "JOIN");
+
+  it("sends hidden: false when the tab is visible", () => {
+    const hook = renderHook(() => useWebSocket());
+    act(() => hook.result.current.connect("token", "general"));
+    act(() => FakeSocket.last.onopen?.());
+    expect(joinFrame()).toMatchObject({ token: "token", room: "general", hidden: false });
+  });
+
+  it("sends hidden: true when connecting from a background tab", () => {
+    hidden = true;
+    const hook = renderHook(() => useWebSocket());
+    act(() => hook.result.current.connect("token", "general"));
+    act(() => FakeSocket.last.onopen?.());
+    expect(joinFrame()).toMatchObject({ hidden: true });
+  });
+});
+

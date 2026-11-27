@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 // like the other limiters.
 export const uploadLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: process.env.NODE_ENV === "test" ? 1000 : 30,
+  // UPLOAD_LIMIT_MAX lets a test set a tiny limit; it is read once at import.
+  max: Number(process.env.UPLOAD_LIMIT_MAX) || (process.env.NODE_ENV === "test" ? 1000 : 30),
   message: { message: "Too many uploads, please try again later." },
 });

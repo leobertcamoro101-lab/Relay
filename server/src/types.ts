@@ -22,6 +22,7 @@ export interface JoinMessage {
   // username: string;
   token: string;
   room: string;
+  hidden?: boolean; // tab was already hidden when it connected
 }
 
 export interface ChatMessageIn {

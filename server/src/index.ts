@@ -242,6 +242,12 @@ wss.on("connection", (ws: WebSocket, request) => {
       if (client) activeClients.delete(client); // a repeat JOIN replaces, never duplicates
       client = { ws, id: randomUUID(), userId: decoded.userId, username, room };
       activeClients.add(client);
+      // A tab that connects while already hidden (e.g. refreshing a background
+      // tab) hasn't seen the room: 0 means "read up to nothing new", so the
+      // saved read marker doesn't move until the tab is shown.
+      const joinedHidden = data.hidden === true;
+      if (joinedHidden) hiddenSince.set(client, 0);
+      else hiddenSince.delete(client);
 
       let history: Awaited<ReturnType<typeof getRecentMessages>> = [];
       try{
@@ -277,7 +283,7 @@ wss.on("connection", (ws: WebSocket, request) => {
       });
 
       // The user is now looking at this room, so it counts as read.
-      void markRoomRead(client.userId, room);
+      if (!joinedHidden) void markRoomRead(client.userId, room);
 
       broadcast(
         room,
