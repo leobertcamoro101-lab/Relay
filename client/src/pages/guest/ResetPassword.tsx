@@ -43,7 +43,7 @@ const ResetPassword = () => {
     <div className="min-h-screen flex items-center justify-center px-4 bg-relay-bg">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <p className="text-5xl mb-3">💬</p>
+          <p className="text-5xl mb-3" aria-hidden="true">💬</p>
           <h1 className="text-3xl font-bold text-relay-ink mb-2">Reset password</h1>
           <p className="text-relay-ink-subtle text-sm">Choose a new password for your account</p>
         </div>
@@ -65,7 +65,7 @@ const ResetPassword = () => {
           ) : (
             <>
               {serverError && (
-                <p className="text-red-600 text-sm text-center mb-4">
+                <p role="alert" className="text-red-600 text-sm text-center mb-4">
                   {serverError}
                 </p>
               )}

@@ -18,6 +18,10 @@ const formatTime = (timestamp: number) =>
     minute: "2-digit",
   });
 
+const prefersReducedMotion = () =>
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 interface MessageListProps {
   messages: ChatMessage[];
   currentUser: User | null;
@@ -56,7 +60,7 @@ const MessageList = ({
   const menuRef = useClickOutside(useCallback(() => setOpenMessageId(null), []));
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, [messages, typingUsers]);
 
   // Scroll to the quoted message and flash it. If the original isn't in the
@@ -66,7 +70,7 @@ const MessageList = ({
   const jumpToMessage = useCallback((id: string) => {
     const el = document.getElementById(`msg-${id}`);
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
     setHighlightId(id);
     if (highlightTimer.current) clearTimeout(highlightTimer.current);
     highlightTimer.current = setTimeout(() => setHighlightId(null), 1500);
@@ -98,11 +102,11 @@ const MessageList = ({
 
   return (
 
-    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+    <div className="flex-1 overflow-y-auto p-4 space-y-2" role="log" aria-label="Messages" aria-live="polite">
       {messages.map((msg, i) => {
         if (msg.type === "SYSTEM") {
           return (
-            <div key={i} className="text-center">
+            <div key={msg.id ?? `sys-${i}`} className="text-center">
               <span className="text-relay-ink-subtle text-xs">{msg.text}</span>
             </div>
           );
@@ -116,7 +120,7 @@ const MessageList = ({
           <div
             key={msg.id || i}
             id={msg.id ? `msg-${msg.id}` : undefined}
-            className={`flex rounded-xl transition-colors duration-500 ${
+            className={`flex rounded-xl transition-colors duration-500 motion-reduce:transition-none ${
               isMine ? "justify-end" : "justify-start"
             } ${msg.id && msg.id === highlightId ? "bg-relay-accent/15" : ""}`}
           >
@@ -138,6 +142,9 @@ const MessageList = ({
                     )}
                     <div className="relative" ref={isMenuOpen ? menuRef : undefined}>
                       <button
+                        type="button"
+                        aria-haspopup="menu"
+                        aria-expanded={isMenuOpen}
                         onClick={() => setOpenMessageId(isMenuOpen ? null : msg.id!)}
                         className="p-1.5 sm:p-2 rounded-full hover:bg-relay-hover text-relay-ink-subtle"
                         title="Message options"
@@ -148,18 +155,20 @@ const MessageList = ({
                       {isMenuOpen && (
                         <div className="absolute right-0 top-full mt-1 w-48 bg-relay-surface rounded-lg shadow-lg border border-relay-border py-1 z-10">
                           <button
+                            type="button"
                             onClick={() => { setOpenMessageId(null); beginEdit(msg); }}
                             title="Edit message"
                             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-relay-ink-muted hover:bg-relay-hover bg-transparent border-0 rounded-none m-0 justify-start"
                           >
-                            <Pencil className="w-3.5 h-3.5" /> Edit
+                            <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Edit
                           </button>
                           <button
+                            type="button"
                             onClick={() => { setOpenMessageId(null); handleDelete(msg.id!); }}
                             title="Delete message"
                             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                           >
-                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" /> Delete
                           </button>
                         </div>
                       )}

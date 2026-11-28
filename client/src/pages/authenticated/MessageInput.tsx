@@ -147,6 +147,7 @@ const MessageInput = ({ onSend, onTyping, replyingTo, onCancelReply }: MessageIn
       return;
     }
     if (e.key === 'Enter') {
+      if (e.nativeEvent.isComposing) return; // Enter confirms an IME candidate, not a send
       e.preventDefault();
       if (!e.shiftKey) {
         handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
@@ -233,6 +234,7 @@ const MessageInput = ({ onSend, onTyping, replyingTo, onCancelReply }: MessageIn
           id="message-text"
           ref={textInputRef}
           name="message"
+          aria-label="Message"
           type="text"
           value={text}
           onChange={handleChange}

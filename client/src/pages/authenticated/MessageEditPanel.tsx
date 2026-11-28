@@ -78,10 +78,11 @@ export default function MessageEditPanel({
       <div className="flex items-center gap-1">
         <input
           autoFocus
+          aria-label="Edit message"
           value={editText}
           onChange={(e) => onTextChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") onSave();
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) onSave();
             if (e.key === "Escape") onCancel();
           }}
           placeholder={message.attachment ? "Caption (optional)" : undefined}
@@ -89,23 +90,27 @@ export default function MessageEditPanel({
           className="px-3 py-1.5 rounded-xl text-sm bg-relay-surface text-relay-ink border border-relay-border focus:outline-none focus:border-relay-accent"
         />
         <button
+          type="button"
           onClick={onSave}
           disabled={isSaving}
           title="Save"
+          aria-label="Save"
           className="text-relay-online hover:text-relay-online/80 disabled:opacity-50"
         >
           <Check className="w-4 h-4" />
         </button>
         <button
+          type="button"
           onClick={onCancel}
           disabled={isSaving}
           title="Cancel"
+          aria-label="Cancel"
           className="text-relay-ink-subtle hover:text-relay-ink disabled:opacity-50"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
-      {isSaving && <p className="text-xs text-relay-ink-subtle">Uploading...</p>}
+      {isSaving && <p role="status" className="text-xs text-relay-ink-subtle">Uploading...</p>}
       {error && (
         <p className="text-xs text-red-600" role="alert">
           {error}

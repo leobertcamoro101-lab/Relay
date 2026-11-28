@@ -61,6 +61,10 @@ const UserSearch = ({ onSelectUser }: UserSearchProps) => {
         value={query}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Find people..."
+        aria-label="Find people"
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setOpen(false);
+        }}
         autoComplete="off"
         className="w-full bg-relay-hover text-relay-ink text-sm rounded-lg px-3 py-2 placeholder-relay-ink-subtle focus:outline-none focus:ring-1 focus:ring-relay-accent"
       />
@@ -69,6 +73,7 @@ const UserSearch = ({ onSelectUser }: UserSearchProps) => {
         <div className="absolute left-3 right-3 mt-1 bg-relay-surface border border-relay-border rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
           {results.map((u) => (
             <button
+              type="button"
               key={u.id}
               onClick={() => handleSelect(u)}
               className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-relay-ink-muted hover:bg-relay-hover"
@@ -83,7 +88,7 @@ const UserSearch = ({ onSelectUser }: UserSearchProps) => {
       )}
 
       {open && results.length === 0 && query.trim() && (
-        <div className="absolute left-3 right-3 mt-1 bg-relay-surface border border-relay-border rounded-lg shadow-lg z-10 px-3 py-2 text-sm text-relay-ink-subtle">
+        <div role="status" className="absolute left-3 right-3 mt-1 bg-relay-surface border border-relay-border rounded-lg shadow-lg z-10 px-3 py-2 text-sm text-relay-ink-subtle">
           No users found.
         </div>
       )}

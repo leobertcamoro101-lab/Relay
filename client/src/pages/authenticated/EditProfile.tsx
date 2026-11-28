@@ -112,7 +112,7 @@ const EditProfile = () => {
         </button>
         <Card>
           {(serverError || error) && (
-            <p className="text-red-600 text-sm text-center mb-4">
+            <p role="alert" className="text-red-600 text-sm text-center mb-4">
               {serverError ?? error}
             </p>
           )}
@@ -184,6 +184,7 @@ const EditProfile = () => {
             {emailChanged && (
               <FormField label="Current password" hint="Needed to change your email address.">
                 <input
+                  name="currentPassword"
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}

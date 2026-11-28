@@ -158,6 +158,7 @@ function ChatInterface() {
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -176,13 +177,14 @@ function ChatInterface() {
           </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-relay-online rounded-full animate-pulse" />
+            <span aria-hidden="true" className="w-2 h-2 bg-relay-online rounded-full animate-pulse motion-reduce:animate-none" />
             <span className="text-relay-online text-xs font-mono">
               WebSocket connected
             </span>
             <button
               onClick={handleLogout}
               title="Log out"
+              aria-label="Log out"
               className="ml-2 text-relay-ink-subtle hover:text-relay-ink transition-colors"
             >
               <svg
@@ -192,6 +194,7 @@ function ChatInterface() {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"

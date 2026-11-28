@@ -10,6 +10,7 @@ interface FormFieldProps {
 
 const FormField = ({ label, error, hint, children }: FormFieldProps) => {
   const generatedId = useId();
+  const errorId = useId();
 
   // Associate the label with its field via htmlFor/id so screen readers
   // announce them together and clicking the label focuses the field.
@@ -18,7 +19,12 @@ const FormField = ({ label, error, hint, children }: FormFieldProps) => {
   // site — respecting an id the caller already set, if any.
   const isField = isValidElement<{ id?: string }>(children);
   const fieldId = isField ? (children.props.id ?? generatedId) : undefined;
-  const field = isField ? cloneElement(children, { id: fieldId }) : children;
+  const field = isField
+    ? cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+        id: fieldId,
+        ...(error ? { 'aria-invalid': true, 'aria-describedby': errorId } : {}),
+      })
+    : children;
 
   return (
     <div>
@@ -27,7 +33,11 @@ const FormField = ({ label, error, hint, children }: FormFieldProps) => {
       </label>
       {field}
       {hint && !error && <p className="text-relay-ink-subtle text-xs mt-1">{hint}</p>}
-      {error && <p className="text-red-600 text-xs mt-1">⚠️ {error.message}</p>}
+      {error && (
+        <p id={errorId} className="text-red-600 text-xs mt-1">
+          <span aria-hidden="true">⚠️</span> {error.message}
+        </p>
+      )}
     </div>
   );
 };

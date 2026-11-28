@@ -42,14 +42,14 @@ const ForgotPassword = () => {
     <div className="min-h-screen flex items-center justify-center px-4 bg-relay-bg">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <p className="text-5xl mb-3">💬</p>
+          <p className="text-5xl mb-3" aria-hidden="true">💬</p>
           <h1 className="text-3xl font-bold text-relay-ink mb-2">Forgot password</h1>
           <p className="text-relay-ink-subtle text-sm">
             Enter your email and we'll send you a reset link
           </p>
         </div>
         <Link
-        to="/relay"
+        to="/"
         className="inline-flex items-center gap-1 text-relay-ink-subtle hover:text-relay-ink text-sm mb-4"
       >
         <ArrowLeft size={16} /> Back
@@ -64,7 +64,7 @@ const ForgotPassword = () => {
           ) : (
             <>
               {serverError && (
-                <p className="text-red-600 text-sm text-center mb-4">
+                <p role="alert" className="text-red-600 text-sm text-center mb-4">
                   {serverError}
                 </p>
               )}

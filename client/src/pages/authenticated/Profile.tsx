@@ -46,7 +46,15 @@ const Profile = () => {
         <LoadingSpinner />{" "}
       </div>
     );
-  if (error) return <p className="text-red-600 text-center">{error}</p>;
+  if (error)
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 bg-relay-bg">
+        <p role="alert" className="text-red-600 text-center">{error}</p>
+        <Link to="/relay" className="text-relay-accent text-sm hover:underline">
+          Back to chat
+        </Link>
+      </div>
+    );
   if (!profile) return null;
 
   return (

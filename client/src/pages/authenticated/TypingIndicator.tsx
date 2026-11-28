@@ -11,19 +11,19 @@ export default function TypingIndicator({ typingUsers }: { typingUsers: TypingUs
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
             <span
-              className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce"
+              className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce motion-reduce:animate-none"
               style={{ animationDelay: "0ms" }}
             />
             <span
-              className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce"
+              className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce motion-reduce:animate-none"
               style={{ animationDelay: "150ms" }}
             />
             <span
-              className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce"
+              className="w-2 h-2 bg-relay-ink-subtle rounded-full animate-bounce motion-reduce:animate-none"
               style={{ animationDelay: "300ms" }}
             />
           </div>
-          <span className="text-relay-ink-subtle text-xs">
+          <span role="status" className="text-relay-ink-subtle text-xs">
             {typingUsers.map((u) => u.username).join(", ")} typing...
           </span>
         </div>

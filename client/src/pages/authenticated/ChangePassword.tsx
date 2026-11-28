@@ -79,7 +79,7 @@ const ChangePassword = () => {
           ) : (
             <>
               {serverError && (
-                <p className="text-red-600 text-sm text-center mb-4">{serverError}</p>
+                <p role="alert" className="text-red-600 text-sm text-center mb-4">{serverError}</p>
               )}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <FormField label="Current password" error={errors.currentPassword}>

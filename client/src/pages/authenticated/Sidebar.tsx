@@ -78,7 +78,7 @@ const Sidebar = ({
         {/* App name */}
         <div className="p-4 border-b border-relay-border flex items-center justify-between">
           <div>
-            <h1 className="text-relay-ink font-bold">💬 Relay</h1>
+            <h1 className="text-relay-ink font-bold"><span aria-hidden="true">💬</span> Relay</h1>
             <p className="text-relay-accent-ink font-mono text-xs">WebSocket</p>
           </div>
           <button
@@ -135,13 +135,24 @@ const Sidebar = ({
                   }`}
                   onClick={() => onSwitchRoom(conversation.roomId)}
                 >
-                  <span className={`truncate flex-1 ${!conversation.otherUser ? 'italic text-relay-ink-subtle' : ''} ${unread[conversation.roomId] ? 'font-semibold text-relay-ink' : ''}`}>
-                    {label}
-                  </span>
-                  {unread[conversation.roomId] > 0 && <UnreadDot />}
-                  <div className="hidden group-hover:flex items-center gap-1">
+                  {/* Real button for keyboard/screen readers; its click bubbles to the row's onClick,
+                      so mouse users can still click anywhere on the row. Not nested around the options button. */}
+                  <button
+                    type="button"
+                    aria-current={isActive ? 'true' : undefined}
+                    className="flex flex-1 min-w-0 items-center gap-2 text-left rounded-lg"
+                  >
+                    <span className={`truncate flex-1 ${!conversation.otherUser ? 'italic text-relay-ink-subtle' : ''} ${unread[conversation.roomId] ? 'font-semibold text-relay-ink' : ''}`}>
+                      {label}
+                    </span>
+                    {unread[conversation.roomId] > 0 && <UnreadDot />}
+                  </button>
+                  <div className={`${isMenuOpen ? 'flex' : 'hidden'} group-hover:flex group-focus-within:flex [@media(hover:none)]:flex items-center gap-1`}>
                     <div className="relative" ref={isMenuOpen ? menuRef : undefined}>
                       <button
+                        type="button"
+                        aria-haspopup="menu"
+                        aria-expanded={isMenuOpen}
                         onClick={(e) => {
                           e.stopPropagation();
                           setOpenMenuRoomId(isMenuOpen ? null : conversation.roomId);
@@ -155,6 +166,7 @@ const Sidebar = ({
                       {isMenuOpen && (
                         <div className="absolute right-0 top-full mt-1 w-40 bg-relay-surface rounded-lg shadow-lg border border-relay-border py-1 z-10">
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenMenuRoomId(null);
@@ -185,13 +197,22 @@ const Sidebar = ({
               return (
                 <div
                   key={user.id}
+                  role={isMe ? undefined : 'button'}
+                  tabIndex={isMe ? undefined : 0}
                   onClick={() => !isMe && onStartConversation(user.id)}
+                  onKeyDown={(e) => {
+                    if (isMe || e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onStartConversation(user.id);
+                    }
+                  }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${
                     isMe ? '' : 'cursor-pointer hover:bg-relay-hover'
                   }`}
                   title={isMe ? undefined : `Message ${user.username}`}
                 >
-                  <span className="w-2 h-2 bg-relay-online rounded-full shrink-0" />
+                  <span aria-hidden="true" className="w-2 h-2 bg-relay-online rounded-full shrink-0" />
                   <span className={`text-sm truncate ${
                     isMe ? 'text-relay-accent-ink font-medium' : 'text-relay-ink-muted'
                   }`}>
